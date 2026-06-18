@@ -252,20 +252,15 @@ def getsampleset(channel,era,**kwargs):
     weight = ""
   #elif channel in ['mutau','etau']:
   if 'mutau' in channel or 'etau' in channel:
-    weight = "genweight*trigweight*puweight*idisoweight_1*idweight_2*ltfweight_2"
+    weight = "genweight*puweight*trigweight*idisoweight_1*idweight_2*ltfweight_2"
+    if "2025" in era:
+      weight = "genweight*puweight_2025_69p2_v3*trigweight_2025*idisoweight_1_2025*idweight_2*ltfweight_2"   
+    #weight = "genweight*puweight_2025_69p2_v3*trigweight_2025*idisoweight_1_2025" #puweight_2025_69p2*trigweight*idweight_1*idweight_2*ltfweight_1*ltfweight_2"
   elif channel in ['tautau','ditau']:
     weight = "genweight*trigweight*puweight*idweight_1*idweight_2*ltfweight_1*ltfweight_2"
   else: # mumu, emu, ...
-    weight = "genweight*trigweight*puweight*idisoweight_1*idisoweight_2"
+    weight = "genweight*puweight_2025_69p2_v3*idisoweight_1_2025*trigweight_2025*idisoweight_2_2025"
   
-  # Apply luminosity-based PU reweighting for 2025 (2024 MC -> 2025 data)
-  if '2025' in era:
-    # Luminosity ratio: 2025_lumi / 2024_lumi
-    lumi_2024 = 104.67  # fb^-1 for now
-    lumi_2025 = 110.18  # fb^-1 for now 
-    lumi_ratio = lumi_2025 / lumi_2024
-    pu_correction = f"puweight*{lumi_ratio}"
-    weight = weight.replace("puweight", pu_correction)
   
   for sf in rmsfs: # remove (old) SFs, e.g. for SF measurement
     weight = weight.replace(sf,"").replace("**","*").strip('*')

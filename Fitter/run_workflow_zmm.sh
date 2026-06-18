@@ -53,6 +53,12 @@ python3 make_measurements_grid.py
 echo "=== Merging all JSON correction files ==="
 python3 merge_tau_jsons.py --type both -o tau_sf/TauCorrections_$YEAR.json
 
+echo "=== Plotting 1D profile NLLs from 2D MultiDimFit outputs ==="
+python3 plot1D_NLL_profiles.py --year $YEAR
+
+echo "=== Building combined TauEnergy_SF + TauID_SF with per-(DM, pT-bin) uncorrelated systs ==="
+python3 make_tid_2025.py
+
 echo "All workflows completed successfully!"
 
 # #!/bin/bash

@@ -23,8 +23,11 @@ def main():
                   help='minBiasXsec passed to brilcalc --minBiasXsec (ub, default 69200)')
   args = ap.parse_args()
 
-  byrun = {}  # run -> list of [ls, intLumi, 0, mean/xsec]
+  # byrun: run -> {ls -> [ls, intLumi, RMS/xsec, mean/xsec]} (dict keyed by ls = dedup)
+  byrun = {}
   nrows = 0
+  ndup  = 0
+  nbad  = 0
   with open(args.input, 'r') as f:
     for line in f:
       line = line.strip()
@@ -33,28 +36,38 @@ def main():
       parts = line.split(',')
       if len(parts) < 9:
         continue
-      run = int(parts[0].split(':')[0])
-      ls  = int(parts[1].split(':')[0])
+      try:
+        run = int(parts[0].split(':')[0])
+        ls  = int(parts[1].split(':')[0])
+      except ValueError:
+        continue
       try:
         recorded = float(parts[6])
         avgpu    = float(parts[7])
       except ValueError:
         continue
+      if recorded <= 0.0 or avgpu <= 0.0:
+        nbad += 1
+        continue
+      # brilcalc --byls does not expose per-LS RMS, leave as 0.
       mean_over_xsec = avgpu / args.minBiasXsec
-      byrun.setdefault(run, []).append([ls, recorded, 0.0, mean_over_xsec])
+      lsmap = byrun.setdefault(run, {})
+      if ls in lsmap:
+        ndup += 1
+        continue # keep first occurrence
+      lsmap[ls] = [ls, recorded, 0.0, mean_over_xsec]
       nrows += 1
 
-  for run in byrun:
-    byrun[run].sort(key=lambda r: r[0])
-
-  out = {str(run): rows for run, rows in sorted(byrun.items())}
+  out = {str(run): sorted(rows.values(), key=lambda r: r[0])
+         for run, rows in sorted(byrun.items())}
   with open(args.output, 'w') as f:
     json.dump(out, f, separators=(',', ':'))
     f.write('\n')
 
   nruns = len(out)
   nls   = sum(len(v) for v in out.values())
-  print(f"Wrote {args.output}: {nruns} runs, {nls} LS rows (read {nrows})")
+  print(f"Wrote {args.output}: {nruns} runs, {nls} LS rows "
+        f"(kept {nrows}, skipped {nbad} bad, {ndup} duplicates)")
 
 if __name__ == '__main__':
   main()
