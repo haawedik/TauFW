@@ -1,6 +1,7 @@
 ## Config for TES + TauID SF fit, ParticleNet VSjet HYBRID, mutau channel, by PNet-DM and pT.
 ## Hybrid: VSjet = ParticleNet (raw-score WP), VSe/VSmu = DeepTau2018v2p5 (kept).
-## Decay-mode binning uses PNet decay modes (decayModePNet_2): 6 bins {0,1,2,10,11,rest}.
+## Decay-mode binning uses PNet decay modes (decayModePNet_2): 4 CP bins {0,1,2,10}
+## (pi=0, rho=1, a1-1prong=2, a1-3prong=10) to match the H->tautau CP analysis.
 ## Sibling of config_coarse_TT.yml (DeepTau). Drive with run_inputs_pnet.sh / run_workflow_zmm_pnet.sh.
 
 channel: mutau
@@ -25,77 +26,80 @@ tagger:
 # swaps idDeepTau2018v2p5VSe). NOTE: idDecayModeNewDMs_2 (HPS DM validity) kept for now.
 baselineCuts: "q_1*q_2<0 && iso_1<0.15 && idDecayModeNewDMs_2 && $VSJET && idDeepTau2018v2p5VSe_2>=2 && idDeepTau2018v2p5VSmu_2>=4 && !lepton_vetoes_notau && metfilter && mt_1<65 "
 
-# 6 PNet decay-mode bins x 3 pT bins. "rest" = decayModePNet_2 not in {0,1,2,10,11}.
+# 4 PNet decay-mode bins x 5 pT bins (CP categories: pi/rho/a1-1pr/a1-3pr).
+# pT edges: pt1 20-30, pt2 30-40, pt3 40-50, pt4 50-60, pt5 60-200.
 regions:
     DM0_pt1:
-        definition: "decayModePNet_2==0 && pt_2>20 && pt_2<40"
-        title: "h^{#pm}, pt: 20-40"
+        definition: "decayModePNet_2==0 && pt_2>20 && pt_2<30"
+        title: "h^{#pm}, pt: 20-30"
     DM0_pt2:
-        definition: "decayModePNet_2==0 && pt_2>=40 && pt_2<60"
-        title: "h^{#pm}, pt: 40-60"
+        definition: "decayModePNet_2==0 && pt_2>=30 && pt_2<40"
+        title: "h^{#pm}, pt: 30-40"
     DM0_pt3:
+        definition: "decayModePNet_2==0 && pt_2>=40 && pt_2<50"
+        title: "h^{#pm}, pt: 40-50"
+    DM0_pt4:
+        definition: "decayModePNet_2==0 && pt_2>=50 && pt_2<60"
+        title: "h^{#pm}, pt: 50-60"
+    DM0_pt5:
         definition: "decayModePNet_2==0 && pt_2>=60 && pt_2<200"
         title: "h^{#pm}, pt: 60-200"
         binning: [11, 40, 150]
     DM1_pt1:
-        definition: "decayModePNet_2==1 && pt_2>20 && pt_2<40"
-        title: "h^{#pm}#pi^{0}, pt: 20-40"
+        definition: "decayModePNet_2==1 && pt_2>20 && pt_2<30"
+        title: "h^{#pm}#pi^{0}, pt: 20-30"
     DM1_pt2:
-        definition: "decayModePNet_2==1 && pt_2>=40 && pt_2<60"
-        title: "h^{#pm}#pi^{0}, pt: 40-60"
+        definition: "decayModePNet_2==1 && pt_2>=30 && pt_2<40"
+        title: "h^{#pm}#pi^{0}, pt: 30-40"
     DM1_pt3:
+        definition: "decayModePNet_2==1 && pt_2>=40 && pt_2<50"
+        title: "h^{#pm}#pi^{0}, pt: 40-50"
+    DM1_pt4:
+        definition: "decayModePNet_2==1 && pt_2>=50 && pt_2<60"
+        title: "h^{#pm}#pi^{0}, pt: 50-60"
+    DM1_pt5:
         definition: "decayModePNet_2==1 && pt_2>=60 && pt_2<200"
         title: "h^{#pm}#pi^{0}, pt: 60-200"
         binning: [11, 40, 150]
     DM2_pt1:
-        definition: "decayModePNet_2==2 && pt_2>20 && pt_2<40"
-        title: "h^{#pm}2#pi^{0}, pt: 20-40"
+        definition: "decayModePNet_2==2 && pt_2>20 && pt_2<30"
+        title: "h^{#pm}2#pi^{0}, pt: 20-30"
     DM2_pt2:
-        definition: "decayModePNet_2==2 && pt_2>=40 && pt_2<60"
-        title: "h^{#pm}2#pi^{0}, pt: 40-60"
+        definition: "decayModePNet_2==2 && pt_2>=30 && pt_2<40"
+        title: "h^{#pm}2#pi^{0}, pt: 30-40"
     DM2_pt3:
+        definition: "decayModePNet_2==2 && pt_2>=40 && pt_2<50"
+        title: "h^{#pm}2#pi^{0}, pt: 40-50"
+    DM2_pt4:
+        definition: "decayModePNet_2==2 && pt_2>=50 && pt_2<60"
+        title: "h^{#pm}2#pi^{0}, pt: 50-60"
+    DM2_pt5:
         definition: "decayModePNet_2==2 && pt_2>=60 && pt_2<200"
         title: "h^{#pm}2#pi^{0}, pt: 60-200"
         binning: [11, 40, 150]
     DM10_pt1:
-        definition: "decayModePNet_2==10 && pt_2>20 && pt_2<40"
-        title: "h^{#pm}h^{#mp}h^{#pm}, pt: 20-40"
+        definition: "decayModePNet_2==10 && pt_2>20 && pt_2<30"
+        title: "h^{#pm}h^{#mp}h^{#pm}, pt: 20-30"
     DM10_pt2:
-        definition: "decayModePNet_2==10 && pt_2>=40 && pt_2<60"
-        title: "h^{#pm}h^{#mp}h^{#pm}, pt: 40-60"
+        definition: "decayModePNet_2==10 && pt_2>=30 && pt_2<40"
+        title: "h^{#pm}h^{#mp}h^{#pm}, pt: 30-40"
     DM10_pt3:
+        definition: "decayModePNet_2==10 && pt_2>=40 && pt_2<50"
+        title: "h^{#pm}h^{#mp}h^{#pm}, pt: 40-50"
+    DM10_pt4:
+        definition: "decayModePNet_2==10 && pt_2>=50 && pt_2<60"
+        title: "h^{#pm}h^{#mp}h^{#pm}, pt: 50-60"
+    DM10_pt5:
         definition: "decayModePNet_2==10 && pt_2>=60 && pt_2<200"
         title: "h^{#pm}h^{#mp}h^{#pm}, pt: 60-200"
-        binning: [11, 40, 150]
-    DM11_pt1:
-        definition: "decayModePNet_2==11 && pt_2>20 && pt_2<40"
-        title: "h^{#pm}h^{#mp}h^{#pm}#pi^{0}, pt: 20-40"
-    DM11_pt2:
-        definition: "decayModePNet_2==11 && pt_2>=40 && pt_2<60"
-        title: "h^{#pm}h^{#mp}h^{#pm}#pi^{0}, pt: 40-60"
-    DM11_pt3:
-        definition: "decayModePNet_2==11 && pt_2>=60 && pt_2<200"
-        title: "h^{#pm}h^{#mp}h^{#pm}#pi^{0}, pt: 60-200"
-        binning: [11, 40, 150]
-    DMrest_pt1:
-        definition: "(decayModePNet_2!=0 && decayModePNet_2!=1 && decayModePNet_2!=2 && decayModePNet_2!=10 && decayModePNet_2!=11) && pt_2>20 && pt_2<40"
-        title: "rest, pt: 20-40"
-    DMrest_pt2:
-        definition: "(decayModePNet_2!=0 && decayModePNet_2!=1 && decayModePNet_2!=2 && decayModePNet_2!=10 && decayModePNet_2!=11) && pt_2>=40 && pt_2<60"
-        title: "rest, pt: 40-60"
-    DMrest_pt3:
-        definition: "(decayModePNet_2!=0 && decayModePNet_2!=1 && decayModePNet_2!=2 && decayModePNet_2!=10 && decayModePNet_2!=11) && pt_2>=60 && pt_2<200"
-        title: "rest, pt: 60-200"
         binning: [11, 40, 150]
 
 plottingOrder: &region_list
           [
-            "DM0_pt1", "DM0_pt2", "DM0_pt3",
-            "DM1_pt1", "DM1_pt2", "DM1_pt3",
-            "DM2_pt1", "DM2_pt2", "DM2_pt3",
-            "DM10_pt1", "DM10_pt2", "DM10_pt3",
-            "DM11_pt1", "DM11_pt2", "DM11_pt3",
-            "DMrest_pt1", "DMrest_pt2", "DMrest_pt3",
+            "DM0_pt1", "DM0_pt2", "DM0_pt3", "DM0_pt4", "DM0_pt5",
+            "DM1_pt1", "DM1_pt2", "DM1_pt3", "DM1_pt4", "DM1_pt5",
+            "DM2_pt1", "DM2_pt2", "DM2_pt3", "DM2_pt4", "DM2_pt5",
+            "DM10_pt1", "DM10_pt2", "DM10_pt3", "DM10_pt4", "DM10_pt5",
           ]
 
 observables:
@@ -132,52 +136,52 @@ tesRegions:
     DM1:     {title: "DM1"}
     DM2:     {title: "DM2"}
     DM10:    {title: "DM10"}
-    DM11:    {title: "DM11"}
-    DMrest:  {title: "DMrest"}
-    DM0_pt1:    {title: "DM0 20<p_{t_{#tau}}<40"}
-    DM0_pt2:    {title: "DM0 40<=p_{t_{#tau}}<60"}
-    DM0_pt3:    {title: "DM0 60<=p_{t_{#tau}}<200"}
-    DM1_pt1:    {title: "DM1 20<p_{t_{#tau}}<40"}
-    DM1_pt2:    {title: "DM1 40<=p_{t_{#tau}}<60"}
-    DM1_pt3:    {title: "DM1 60<=p_{t_{#tau}}<200"}
-    DM2_pt1:    {title: "DM2 20<p_{t_{#tau}}<40"}
-    DM2_pt2:    {title: "DM2 40<=p_{t_{#tau}}<60"}
-    DM2_pt3:    {title: "DM2 60<=p_{t_{#tau}}<200"}
-    DM10_pt1:   {title: "DM10 20<p_{t_{#tau}}<40"}
-    DM10_pt2:   {title: "DM10 40<=p_{t_{#tau}}<60"}
-    DM10_pt3:   {title: "DM10 60<=p_{t_{#tau}}<200"}
-    DM11_pt1:   {title: "DM11 20<p_{t_{#tau}}<40"}
-    DM11_pt2:   {title: "DM11 40<=p_{t_{#tau}}<60"}
-    DM11_pt3:   {title: "DM11 60<=p_{t_{#tau}}<200"}
-    DMrest_pt1: {title: "DMrest 20<p_{t_{#tau}}<40"}
-    DMrest_pt2: {title: "DMrest 40<=p_{t_{#tau}}<60"}
-    DMrest_pt3: {title: "DMrest 60<=p_{t_{#tau}}<200"}
+    DM0_pt1:    {title: "DM0 20<p_{t_{#tau}}<30"}
+    DM0_pt2:    {title: "DM0 30<=p_{t_{#tau}}<40"}
+    DM0_pt3:    {title: "DM0 40<=p_{t_{#tau}}<50"}
+    DM0_pt4:    {title: "DM0 50<=p_{t_{#tau}}<60"}
+    DM0_pt5:    {title: "DM0 60<=p_{t_{#tau}}<200"}
+    DM1_pt1:    {title: "DM1 20<p_{t_{#tau}}<30"}
+    DM1_pt2:    {title: "DM1 30<=p_{t_{#tau}}<40"}
+    DM1_pt3:    {title: "DM1 40<=p_{t_{#tau}}<50"}
+    DM1_pt4:    {title: "DM1 50<=p_{t_{#tau}}<60"}
+    DM1_pt5:    {title: "DM1 60<=p_{t_{#tau}}<200"}
+    DM2_pt1:    {title: "DM2 20<p_{t_{#tau}}<30"}
+    DM2_pt2:    {title: "DM2 30<=p_{t_{#tau}}<40"}
+    DM2_pt3:    {title: "DM2 40<=p_{t_{#tau}}<50"}
+    DM2_pt4:    {title: "DM2 50<=p_{t_{#tau}}<60"}
+    DM2_pt5:    {title: "DM2 60<=p_{t_{#tau}}<200"}
+    DM10_pt1:   {title: "DM10 20<p_{t_{#tau}}<30"}
+    DM10_pt2:   {title: "DM10 30<=p_{t_{#tau}}<40"}
+    DM10_pt3:   {title: "DM10 40<=p_{t_{#tau}}<50"}
+    DM10_pt4:   {title: "DM10 50<=p_{t_{#tau}}<60"}
+    DM10_pt5:   {title: "DM10 60<=p_{t_{#tau}}<200"}
 
 tid_SFRegions:
     DM0:     {title: "DM0"}
     DM1:     {title: "DM1"}
     DM2:     {title: "DM2"}
     DM10:    {title: "DM10"}
-    DM11:    {title: "DM11"}
-    DMrest:  {title: "DMrest"}
-    DM0_pt1:    {title: "DM0 20<p_{t_{#tau}}<40"}
-    DM0_pt2:    {title: "DM0 40<=p_{t_{#tau}}<60"}
-    DM0_pt3:    {title: "DM0 60<=p_{t_{#tau}}<200"}
-    DM1_pt1:    {title: "DM1 20<p_{t_{#tau}}<40"}
-    DM1_pt2:    {title: "DM1 40<=p_{t_{#tau}}<60"}
-    DM1_pt3:    {title: "DM1 60<=p_{t_{#tau}}<200"}
-    DM2_pt1:    {title: "DM2 20<p_{t_{#tau}}<40"}
-    DM2_pt2:    {title: "DM2 40<=p_{t_{#tau}}<60"}
-    DM2_pt3:    {title: "DM2 60<=p_{t_{#tau}}<200"}
-    DM10_pt1:   {title: "DM10 20<p_{t_{#tau}}<40"}
-    DM10_pt2:   {title: "DM10 40<=p_{t_{#tau}}<60"}
-    DM10_pt3:   {title: "DM10 60<=p_{t_{#tau}}<200"}
-    DM11_pt1:   {title: "DM11 20<p_{t_{#tau}}<40"}
-    DM11_pt2:   {title: "DM11 40<=p_{t_{#tau}}<60"}
-    DM11_pt3:   {title: "DM11 60<=p_{t_{#tau}}<200"}
-    DMrest_pt1: {title: "DMrest 20<p_{t_{#tau}}<40"}
-    DMrest_pt2: {title: "DMrest 40<=p_{t_{#tau}}<60"}
-    DMrest_pt3: {title: "DMrest 60<=p_{t_{#tau}}<200"}
+    DM0_pt1:    {title: "DM0 20<p_{t_{#tau}}<30"}
+    DM0_pt2:    {title: "DM0 30<=p_{t_{#tau}}<40"}
+    DM0_pt3:    {title: "DM0 40<=p_{t_{#tau}}<50"}
+    DM0_pt4:    {title: "DM0 50<=p_{t_{#tau}}<60"}
+    DM0_pt5:    {title: "DM0 60<=p_{t_{#tau}}<200"}
+    DM1_pt1:    {title: "DM1 20<p_{t_{#tau}}<30"}
+    DM1_pt2:    {title: "DM1 30<=p_{t_{#tau}}<40"}
+    DM1_pt3:    {title: "DM1 40<=p_{t_{#tau}}<50"}
+    DM1_pt4:    {title: "DM1 50<=p_{t_{#tau}}<60"}
+    DM1_pt5:    {title: "DM1 60<=p_{t_{#tau}}<200"}
+    DM2_pt1:    {title: "DM2 20<p_{t_{#tau}}<30"}
+    DM2_pt2:    {title: "DM2 30<=p_{t_{#tau}}<40"}
+    DM2_pt3:    {title: "DM2 40<=p_{t_{#tau}}<50"}
+    DM2_pt4:    {title: "DM2 50<=p_{t_{#tau}}<60"}
+    DM2_pt5:    {title: "DM2 60<=p_{t_{#tau}}<200"}
+    DM10_pt1:   {title: "DM10 20<p_{t_{#tau}}<30"}
+    DM10_pt2:   {title: "DM10 30<=p_{t_{#tau}}<40"}
+    DM10_pt3:   {title: "DM10 40<=p_{t_{#tau}}<50"}
+    DM10_pt4:   {title: "DM10 50<=p_{t_{#tau}}<60"}
+    DM10_pt5:   {title: "DM10 60<=p_{t_{#tau}}<200"}
 
 processes: ["ZTT","ZL","ZJ","W","VV","ST","TTT","TTL","TTJ","QCD","data_obs"]
 

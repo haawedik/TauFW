@@ -126,7 +126,7 @@ def _load_fullcorr_tid(input_root, year, jet_wp, ele_wp):
                 if tid_v:
                     tid_val = tid_v.getVal()
                     tid_err = tid_v.getError()
-                    for pt in (1,2,3):
+                    for pt in (1,2,3,4,5):
                         th = pars.find(f'tid_syst_{dm}_pt{pt}')
                         if not th: continue
                         th_val = th.getVal(); th_err = th.getError()
@@ -143,7 +143,7 @@ def _load_fullcorr_tid(input_root, year, jet_wp, ele_wp):
         tid_err_u_fb = abs(common['high'] - common['val']) if common['high'] is not None else 0.0
         sys_term_fb = 0.10 * common['val']
 
-        for pt in ('pt1','pt2','pt3'):
+        for pt in ('pt1','pt2','pt3','pt4','pt5'):
             theta = pulls.get(pt, 0.0)
             if pt in sf_eff_map:
                 sf = sf_eff_map[pt]
@@ -317,9 +317,11 @@ def plot_dm_graph(setup, form, ele_wp, jet_wp, **kwargs):
 
     # Define pt edges for each pt bin (adjust these based on your actual pt ranges)
     pt_bin_edges = { # should be configurable in the yml file, but for now hardcoded based on typical pt binning
-        "pt1": [20.0, 40.0],   # Adjust these ranges as needed
-        "pt2": [40.0, 60.0],   # Adjust these ranges as needed  
-        "pt3": [60.0, 200.0],  # Adjust these ranges as needed
+        "pt1": [20.0, 30.0],
+        "pt2": [30.0, 40.0],
+        "pt3": [40.0, 50.0],
+        "pt4": [50.0, 60.0],
+        "pt5": [60.0, 200.0],
     }
 
     # Create a dictionary to store sf data
@@ -350,17 +352,14 @@ def plot_dm_graph(setup, form, ele_wp, jet_wp, **kwargs):
                     # Get values for current DM
                     print(">>>>>> INPUT FOR JSON")
                     if dm_list:
-                        # Sort dm_list to ensure consistent ordering (pt1, pt2, pt3, then inclusive)
+                        import re as _re
+                        # Sort dm_list to ensure consistent ordering (pt1..ptN, then inclusive)
                         def sort_key(item):
-                            if '_pt1' in item:
-                                return (item.replace('_pt1', ''), 1)
-                            elif '_pt2' in item:
-                                return (item.replace('_pt2', ''), 2)
-                            elif '_pt3' in item:
-                                return (item.replace('_pt3', ''), 3)
-                            else:
-                                return (item, 0)  # Inclusive DM comes first
-                        
+                            m = _re.search(r'_pt(\d+)', item)
+                            if m:
+                                return (item[:m.start()], int(m.group(1)))
+                            return (item, 0)  # Inclusive DM comes first
+
                         sorted_dm_list = sorted(dm_list, key=sort_key)
                         
                         # Get sorted values
@@ -375,25 +374,23 @@ def plot_dm_graph(setup, form, ele_wp, jet_wp, **kwargs):
                         has_pt_bins = any('_pt' in elem for elem in sorted_dm_list)
                         
                         if has_pt_bins:
-                            # We have pt binned measurements
+                            # We have pt binned measurements: collect the lower edge of every
+                            # pt bin present, then append the upper edge of the highest one.
+                            pt_keys_present = []
                             for elem in sorted_dm_list:
-                                if '_pt1' in elem:
-                                    if pt_bin_edges["pt1"][0] not in dm_pt_edges:
-                                        dm_pt_edges.append(pt_bin_edges["pt1"][0])
-                                elif '_pt2' in elem:
-                                    if pt_bin_edges["pt2"][0] not in dm_pt_edges:
-                                        dm_pt_edges.append(pt_bin_edges["pt2"][0])
-                                elif '_pt3' in elem:
-                                    if pt_bin_edges["pt3"][0] not in dm_pt_edges:
-                                        dm_pt_edges.append(pt_bin_edges["pt3"][0])
-                            
-                            # Add the final edge
-                            if any('_pt3' in elem for elem in sorted_dm_list):
-                                dm_pt_edges.append(pt_bin_edges["pt3"][1])
-                            elif any('_pt2' in elem for elem in sorted_dm_list):
-                                dm_pt_edges.append(pt_bin_edges["pt2"][1])
-                            elif any('_pt1' in elem for elem in sorted_dm_list):
-                                dm_pt_edges.append(pt_bin_edges["pt1"][1])
+                                m = _re.search(r'_pt(\d+)', elem)
+                                if not m:
+                                    continue
+                                key = f"pt{m.group(1)}"
+                                if key not in pt_bin_edges:
+                                    continue
+                                lo = pt_bin_edges[key][0]
+                                if lo not in dm_pt_edges:
+                                    dm_pt_edges.append(lo)
+                                pt_keys_present.append(key)
+                            if pt_keys_present:
+                                last_key = max(pt_keys_present, key=lambda k: int(k[2:]))
+                                dm_pt_edges.append(pt_bin_edges[last_key][1])
                         else:
                             # Only inclusive measurement, use full pt range
                             dm_pt_edges = [20.0, 200.0]

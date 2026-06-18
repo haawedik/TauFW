@@ -13,7 +13,7 @@ case "$TAGGER" in
 esac
 
 J_VALUES=("VVTight")  #"Loose" "Medium" "Tight" "VTight" )  # PNet/UParT VSjet WPs (raw-score)
-E_VALUES=("Tight") #"VVLoose")                            # DeepTau VSe WPs (hybrid)
+E_VALUES=("VVLoose")                                       # DeepTau VSe WP: mt/tt convention = VVLooseVSe (VSmu=Tight via baseline)
 YEARS=("2024" "2025")
 CONFIG_MM="TauES/config/FitSetup_mumu.yml"               # Z->mumu CR (tagger-independent)
 

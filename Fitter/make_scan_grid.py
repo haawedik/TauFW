@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Combine 2D-scan PNGs into a 4x3 grid (rows=DM, cols=pt) per WP combo.
+"""Combine 2D-scan PNGs into a grid (rows=DM, cols=pt) per WP combo.
 
 Both variants produce 12 scan_2D_*.png files; only the POI names in the
 filename differ. The --variant flag picks the right name pattern.
@@ -10,7 +10,7 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 
 DMS = ["DM0", "DM1", "DM10", "DM11"]
-PTS = ["pt1", "pt2", "pt3"]
+PTS = ["pt1", "pt2", "pt3", "pt4", "pt5"]
 
 
 def find_scan(folder, dm, pt):

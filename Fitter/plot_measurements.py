@@ -15,7 +15,7 @@ TREE_TAG = ""  # tagger suffix for the output/postfit trees (e.g. "_pnet"); set 
 def load_measurements_corr(ele_wp, jet_wp, year):
     """corrTES loader: one param/fitdiag file per DM contains 4 POIs (1 TES + 3 TauID);
        expand each into 3 measurement records (one per pT bin) sharing the TES value."""
-    PT_RANGES = {'pt1': '20-40 GeV', 'pt2': '40-60 GeV', 'pt3': '60-200 GeV'}
+    PT_RANGES = {'pt1': '20-30 GeV', 'pt2': '30-40 GeV', 'pt3': '40-50 GeV', 'pt4': '50-60 GeV', 'pt5': '60-200 GeV'}
     measurements = []
 
     # ---- MultiDimFit: per-DM param files ----
@@ -31,7 +31,7 @@ def load_measurements_corr(ele_wp, jet_wp, year):
         dm = dm_match.group(1)
         # Parse: tes_DM<X> + tid_SF_DM<X>_pt{1,2,3} (+ _1sigma_low/_high)
         tes = {'val': None, 'low': None, 'high': None}
-        tid = {p: {'val': None, 'low': None, 'high': None} for p in ('pt1','pt2','pt3')}
+        tid = {p: {'val': None, 'low': None, 'high': None} for p in ('pt1','pt2','pt3','pt4','pt5')}
         with open(filename) as f:
             for line in f:
                 line = line.strip()
@@ -48,13 +48,13 @@ def load_measurements_corr(ele_wp, jet_wp, year):
                 elif key == f'tes_{dm}_1sigma_low': tes['low'] = val
                 elif key == f'tes_{dm}_1sigma_high': tes['high'] = val
                 # TauID per pT
-                for pt in ('pt1','pt2','pt3'):
+                for pt in ('pt1','pt2','pt3','pt4','pt5'):
                     if key == f'tid_SF_{dm}_{pt}': tid[pt]['val'] = val
                     elif key == f'tid_SF_{dm}_{pt}_1sigma_low': tid[pt]['low'] = val
                     elif key == f'tid_SF_{dm}_{pt}_1sigma_high': tid[pt]['high'] = val
         tes_err_d = (abs(tes['val'] - tes['low'])  if tes['val'] is not None and tes['low']  is not None else None)
         tes_err_u = (abs(tes['high'] - tes['val']) if tes['val'] is not None and tes['high'] is not None else None)
-        for pt in ('pt1','pt2','pt3'):
+        for pt in ('pt1','pt2','pt3','pt4','pt5'):
             t = tid[pt]
             if t['val'] is None or tes['val'] is None:
                 continue
@@ -133,7 +133,7 @@ def _fullcorr_sf_eff_and_err(fitdiag_path, dm):
     tid_val = tid_v.getVal()
     tid_err = tid_v.getError()
     sf_eff, sig_eff = {}, {}
-    for pt in (1, 2, 3):
+    for pt in (1, 2, 3, 4, 5):
         syst_name = f'tid_syst_{dm}_pt{pt}'
         th = pars.find(syst_name)
         if not th:
@@ -156,7 +156,7 @@ def load_measurements_fullcorr(ele_wp, jet_wp, year):
        records (one per pT) with effective TauID = common · (1 + 0.10 · θ̂).
        Uncertainty uses the full POI-nuisance covariance from FitDiagnostics
        (the POI and per-pT nuisances are strongly anti-correlated)."""
-    PT_RANGES = {'pt1': '20-40 GeV', 'pt2': '40-60 GeV', 'pt3': '60-200 GeV'}
+    PT_RANGES = {'pt1': '20-30 GeV', 'pt2': '30-40 GeV', 'pt3': '40-50 GeV', 'pt4': '50-60 GeV', 'pt5': '60-200 GeV'}
     measurements = []
 
     pattern = f"output_pt_less_region_fullcorr{TREE_TAG}/againstjet_{jet_wp}/againstelectron_{ele_wp}/{year}/FitparameterValues__mutau_DeepTau_{year}-13TeV_DM*.txt"
@@ -203,7 +203,7 @@ def load_measurements_fullcorr(ele_wp, jet_wp, year):
                         f"againstelectron_{ele_wp}/{year}/"
                         f"fitDiagnostics.mt_m_vis-{dm}_mutau_DeepTau-{year}-13TeV.root")
         sf_eff_map, sig_eff_map, _, _ = _fullcorr_sf_eff_and_err(fitdiag_path, dm)
-        for pt in ('pt1','pt2','pt3'):
+        for pt in ('pt1','pt2','pt3','pt4','pt5'):
             theta = pulls.get(pt, 0.0)
             sf_eff = tid['val'] * (1.0 + 0.10 * theta)
             if sf_eff_map and pt in sf_eff_map:
@@ -256,7 +256,7 @@ def load_measurements_fullcorr(ele_wp, jet_wp, year):
                         f"againstelectron_{ele_wp}/{year}/"
                         f"fitDiagnostics.mt_m_vis-{dm}_mutau_DeepTau-{year}-13TeV.root")
         sf_eff_map, sig_eff_map, _, _ = _fullcorr_sf_eff_and_err(fitdiag_path, dm)
-        for pt in ('pt1','pt2','pt3'):
+        for pt in ('pt1','pt2','pt3','pt4','pt5'):
             if sf_eff_map and pt in sf_eff_map:
                 sf, err = sf_eff_map[pt], sig_eff_map[pt]
             else:
@@ -306,7 +306,7 @@ def load_measurements(ele_wp="tight", jet_wp="medium", year="2024", variant="unc
             
             if pt_bin == "inclusive": region_name = f"{dm} inclusive"
             else:
-                pt_ranges = {'pt1': '20-40 GeV', 'pt2': '40-60 GeV', 'pt3': '60-200 GeV'}
+                pt_ranges = {'pt1': '20-30 GeV', 'pt2': '30-40 GeV', 'pt3': '40-50 GeV', 'pt4': '50-60 GeV', 'pt5': '60-200 GeV'}
                 pt_label = pt_ranges.get(pt_bin, pt_bin)
                 region_name = f"{dm} {pt_label}"
             
@@ -398,7 +398,7 @@ def load_measurements(ele_wp="tight", jet_wp="medium", year="2024", variant="unc
 
             if pt_bin == "inclusive": region_name = f"{dm} inclusive"
             else:
-                pt_ranges = {'pt1': '20-40 GeV', 'pt2': '40-60 GeV', 'pt3': '60-200 GeV'}
+                pt_ranges = {'pt1': '20-30 GeV', 'pt2': '30-40 GeV', 'pt3': '40-50 GeV', 'pt4': '50-60 GeV', 'pt5': '60-200 GeV'}
                 pt_label = pt_ranges.get(pt_bin, pt_bin)
                 region_name = f"{dm} {pt_label}"
 
@@ -460,7 +460,7 @@ def create_correlation_plot(measurements, jet_wp, ele_wp):
         
         if meas['pt_bin'] == 'inclusive': label = meas['dm']
         else:
-            pt_ranges = {'pt1': '20-40 GeV', 'pt2': '40-60 GeV', 'pt3': '60-200 GeV'}
+            pt_ranges = {'pt1': '20-30 GeV', 'pt2': '30-40 GeV', 'pt3': '40-50 GeV', 'pt4': '50-60 GeV', 'pt5': '60-200 GeV'}
             pt_range = pt_ranges.get(meas['pt_bin'], meas['pt_bin'])
             label = f"{meas['dm']} {pt_range}"
         y_labels.append(label)

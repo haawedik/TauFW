@@ -19,9 +19,9 @@ case "$TAGGER" in
 esac
 
 J_VALUES=("VVTight") # "Loose" "Medium" "Tight" "VTight"   # PNet/UParT VSjet WPs (raw-score)
-E_VALUES=("Tight")            # "VVLoose"                  # DeepTau VSe WPs (hybrid)
+E_VALUES=("VVLoose")                                       # DeepTau VSe WP: mt/tt convention = VVLooseVSe (VSmu=Tight via baseline)
 YEARS=("2024") # "2025"
-DMS=("DM0" "DM1" "DM2" "DM10" "DM11" "DMrest")           # 6 PNet/UParT decay-mode bins
+DMS=("DM0" "DM1" "DM2" "DM10")                           # 4 PNet/UParT CP decay-mode bins {pi,rho,a1-1pr,a1-3pr}
 DMS_CSV=$(IFS=,; echo "${DMS[*]}")                       # for plotters that take --dms
 TAG="_DeepTau"                                           # embedded fit tag (see NOTE above)
 CONFIG_MM="TauES/config/FitSetup_mumu.yml"

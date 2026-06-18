@@ -149,7 +149,7 @@ def collect_profiles(indir, year, jet_wp, ele_wp, dm):
   """For (jet, ele, DM), return {'tes': [...], 'tid': [...]} where each list has
      one profile dict per pt bin: {pt_idx, poi, xs, ys, bf, err_dn, err_up}."""
   out = {'tes': [], 'tid': []}
-  for pt_idx in (1, 2, 3):
+  for pt_idx in (1, 2, 3, 4, 5):
     fname = (f"higgsCombine.mt_m_vis-{dm}_pt{pt_idx}_mutau_DeepTau-{year}"
              f"-13TeV.MultiDimFit.mH90.root")
     fpath = os.path.join(indir, f'againstjet_{jet_wp}',
@@ -319,7 +319,7 @@ def collect_profiles_corr(indir, year, jet_wp, ele_wp, dm):
   combo_dir = os.path.join(indir, f'againstjet_{jet_wp}',
                            f'againstelectron_{ele_wp}', year)
   out = {'tes': [], 'tid': []}
-  for pt_idx in (1, 2, 3):
+  for pt_idx in (1, 2, 3, 4, 5):
     region = f'{dm}_pt{pt_idx}'
     tes_poi = f'tes_{dm}'
     tid_poi = f'tid_SF_{region}'
@@ -415,7 +415,7 @@ def collect_profiles_fullcorr(indir, year, jet_wp, ele_wp, dm):
   pf = os.path.join(combo_dir, f"FitparameterValues_mutau_DeepTau_{year}-13TeV_{dm}.txt")
   params = _read_param_file(pf)
   tid_bf = params.get(tid_poi, out['tid']['bf'] if out['tid'] else 1.0)
-  for pt_idx in (1, 2, 3):
+  for pt_idx in (1, 2, 3, 4, 5):
     syst_name = f"tid_syst_{dm}_pt{pt_idx}"
     if syst_name in params:
       theta = params[syst_name]
