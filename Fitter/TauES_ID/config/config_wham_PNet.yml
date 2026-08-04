@@ -1,0 +1,238 @@
+## Config for TES + TauID SF fit on WHAM-exported inputs. ParticleNet VSjet
+## HYBRID (VSjet = PNet VTight ABCD, VSe/VSmu = DeepTau2018v2p5), mutau, by
+## PNet-DM x pT, in the H->tautau CP phase space (per-DM quality cuts below).
+##
+## INPUTS ARE NOT CREATED FROM PICOS: they come from the WHAM plotter
+## (`wham export Configurations/tau_sf/<S>/taufw_export.yaml` in
+## /eos/home-h/haawedik/WHAM-plot), which writes
+##   input_pt_less_region/againstjet_VVTight/againstelectron_{VVLoose,Tight}/
+##       ztt_mt_tes_m_vis.inputs-2024-13TeV_mutau.root   (+ the mm companion)
+## The tagger/baselineCuts/samples blocks are kept for provenance only —
+## createinputsTES.py is NOT part of this workflow.
+##
+## File contents (per region dir): ZTT ZL ZJ TTT TTL TTJ W VV ST QCD data_obs;
+## ZTT_TES* at 0.005 steps (denser than the old 0.010 inputs — all listed in
+## TESvariations below); shape_{m,j}TauFake_$BIN on ZL,TTL / ZJ,TTJ,W in every
+## dir (zero/nominal copies where a fake component is empty, e.g. ZL/TTL in the
+## 3-prong bins). Only the single DM11_pt1 dir is 11 bins [40,150] (low stats;
+## matches the per-region `binning` below), the rest 22.
+##
+## Run (from Fitter/):
+##   python3 TauES_ID/harvestDatacards_TES_idSF_MCStat_corrTES.py -y 2024 \
+##     -c TauES_ID/config/config_wham_PNet.yml \
+##     -i input_pt_less_region/againstjet_VVTight/againstelectron_VVLoose
+##   python3 TauES_ID/harvestDatacards_zmm.py -y 2024 \
+##     -c TauES/config/FitSetup_mumu_wham.yml -e "" \
+##     -i input_pt_less_region/againstjet_VVTight/againstelectron_VVLoose -o <outdir>
+## then makecombinedfitTES_SF_corrTES.py with -c this file and
+## -cmm TauES/config/FitSetup_mumu_wham.yml.
+
+channel: mutau
+
+tag: "_mutau"
+
+# ---- provenance only (input creation is done in WHAM) ----------------------
+tagger:
+    id_label: "ParticleNetVSjet"
+    vsjet:
+        discriminant: "rawPNetVSjet_2"
+        wps:
+            Loose:   0.6857
+            Medium:  0.8347
+            Tight:   0.9059
+            VTight:  0.9494
+            VVTight: 0.9737
+
+# WHAM baseline (documentation): pt_1>26 && abs(eta_1)<2.4 && iso_1<0.15 &&
+# mt_1<65 && single-muon trigger && idDeepTau2018v2p5VSe_2>={2|6} &&
+# idDeepTau2018v2p5VSmu_2>=4; VSjet = PNet VTight (idPNetVSjet_2>=7) as the
+# ABCD signal isolation; QCD is the data-driven ABCD estimate.
+baselineCuts: "q_1*q_2<0 && iso_1<0.15 && idPNetVSjet_2>=7 && idDeepTau2018v2p5VSe_2>=2 && idDeepTau2018v2p5VSmu_2>=4 && mt_1<65 "
+# ----------------------------------------------------------------------------
+
+# 5 PNet decay-mode bins, WITH the CP quality cuts (definitions are
+# documentation — the region content is fixed by the WHAM input file):
+# DM0 pi (ip_LengthSig>=1.25), DM1 rho (pion_E_split>0.15),
+# DM2 a1->1pr (pion_E_split>0.15), DM10/DM11 a1->3pr(+pi0) (hasRefitSV).
+# pT edges: pt1 20-30, pt2 30-40, pt3 40-200 (pt3+pt4 merged, low stats) —
+# except DM11, which is a single pt1 = 20-200 region (low stats).
+regions:
+    DM0_pt1:
+        definition: "decayModePNet_2==0 && ip_LengthSig_2>=1.25 && pt_2>=20 && pt_2<30"
+        title: "h^{#pm}, pt: 20-30"
+    DM0_pt2:
+        definition: "decayModePNet_2==0 && ip_LengthSig_2>=1.25 && pt_2>=30 && pt_2<40"
+        title: "h^{#pm}, pt: 30-40"
+    DM0_pt3:
+        definition: "decayModePNet_2==0 && ip_LengthSig_2>=1.25 && pt_2>=40 && pt_2<200"
+        title: "h^{#pm}, pt: 40-200"
+    DM1_pt1:
+        definition: "decayMode_2==1 && decayModePNet_2==1 && pion_E_split_2>0.15 && pt_2>=20 && pt_2<30"
+        title: "h^{#pm}#pi^{0}, pt: 20-30"
+    DM1_pt2:
+        definition: "decayMode_2==1 && decayModePNet_2==1 && pion_E_split_2>0.15 && pt_2>=30 && pt_2<40"
+        title: "h^{#pm}#pi^{0}, pt: 30-40"
+    DM1_pt3:
+        definition: "decayMode_2==1 && decayModePNet_2==1 && pion_E_split_2>0.15 && pt_2>=40 && pt_2<200"
+        title: "h^{#pm}#pi^{0}, pt: 40-200"
+    DM2_pt1:
+        definition: "decayMode_2==1 && decayModePNet_2==2 && pion_E_split_2>0.15 && pt_2>=20 && pt_2<30"
+        title: "h^{#pm}2#pi^{0}, pt: 20-30"
+    DM2_pt2:
+        definition: "decayMode_2==1 && decayModePNet_2==2 && pion_E_split_2>0.15 && pt_2>=30 && pt_2<40"
+        title: "h^{#pm}2#pi^{0}, pt: 30-40"
+    DM2_pt3:
+        definition: "decayMode_2==1 && decayModePNet_2==2 && pion_E_split_2>0.15 && pt_2>=40 && pt_2<200"
+        title: "h^{#pm}2#pi^{0}, pt: 40-200"
+    DM10_pt1:
+        definition: "decayModePNet_2==10 && hasRefitSV_2 && pt_2>=20 && pt_2<30"
+        title: "h^{#pm}h^{#mp}h^{#pm}, pt: 20-30"
+    DM10_pt2:
+        definition: "decayModePNet_2==10 && hasRefitSV_2 && pt_2>=30 && pt_2<40"
+        title: "h^{#pm}h^{#mp}h^{#pm}, pt: 30-40"
+    DM10_pt3:
+        definition: "decayModePNet_2==10 && hasRefitSV_2 && pt_2>=40 && pt_2<200"
+        title: "h^{#pm}h^{#mp}h^{#pm}, pt: 40-200"
+    # DM11: ONE pT region (20-200) — the per-pT DM11 bins were too low-stat
+    # for stable (tid_SF, tes) scans (most grid-point profile fits diverged).
+    DM11_pt1:
+        definition: "decayModePNet_2==11 && hasRefitSV_2 && pt_2>=20 && pt_2<200"
+        title: "h^{#pm}h^{#mp}h^{#pm}#pi^{0}, pt: 20-200"
+        binning: [11, 40, 150]
+
+plottingOrder: &region_list
+          [
+            "DM0_pt1", "DM0_pt2", "DM0_pt3",
+            "DM1_pt1", "DM1_pt2", "DM1_pt3",
+            "DM2_pt1", "DM2_pt2", "DM2_pt3",
+            "DM10_pt1", "DM10_pt2", "DM10_pt3",
+            "DM11_pt1",
+          ]
+
+observables:
+    m_vis:
+        binning: [22, 40, 150]
+        title: "m_{vis}"
+        extra:
+            cut: "40<m_vis && m_vis<150"
+        fitRegions:  *region_list
+        scanRegions: *region_list
+
+# WHAM TES grid: 0.005 steps (no 1.000 — the plain ZTT template is nominal).
+TESvariations:
+    values : [0.950, 0.955, 0.960, 0.965, 0.970, 0.975, 0.980, 0.985, 0.990, 0.995,
+              1.005, 1.010, 1.015, 1.020, 1.025, 1.030, 1.035, 1.040, 1.045, 1.050]
+    # values : [0.950, 0.960, 0.970, 0.980, 0.990, 1.010, 1.020, 1.030, 1.040, 1.050]
+    processes: ["ZTT"]
+
+fitSpecs:
+    doBBB: doShapes
+    signalBBB: True
+    backgroundBBB: True
+
+# ---- provenance only: WHAM sample -> process mapping (already applied) -----
+# ZTT/ZL/ZJ = DY genuine/l-fake/j-fake; TTT/TTL/TTJ = TTto* splits;
+# ST = ST_tW_* (all genmatch components summed, no shape systs, xsec_st 1.05);
+# W = W_jets + W_jfake (jTauFake shifts the j-fake component only); VV = WW/WZ/ZZ;
+# QCD = ABCD multijet.
+samples:
+    data: "data_obs"
+# ----------------------------------------------------------------------------
+
+tesRegions:
+    DM0:     {title: "DM0"}
+    DM1:     {title: "DM1"}
+    DM2:     {title: "DM2"}
+    DM10:    {title: "DM10"}
+    DM11:    {title: "DM11"}
+    DM0_pt1:    {title: "DM0 20<p_{t_{#tau}}<30"}
+    DM0_pt2:    {title: "DM0 30<=p_{t_{#tau}}<40"}
+    DM0_pt3:    {title: "DM0 40<=p_{t_{#tau}}<200"}
+    DM1_pt1:    {title: "DM1 20<p_{t_{#tau}}<30"}
+    DM1_pt2:    {title: "DM1 30<=p_{t_{#tau}}<40"}
+    DM1_pt3:    {title: "DM1 40<=p_{t_{#tau}}<200"}
+    DM2_pt1:    {title: "DM2 20<p_{t_{#tau}}<30"}
+    DM2_pt2:    {title: "DM2 30<=p_{t_{#tau}}<40"}
+    DM2_pt3:    {title: "DM2 40<=p_{t_{#tau}}<200"}
+    DM10_pt1:   {title: "DM10 20<p_{t_{#tau}}<30"}
+    DM10_pt2:   {title: "DM10 30<=p_{t_{#tau}}<40"}
+    DM10_pt3:   {title: "DM10 40<=p_{t_{#tau}}<200"}
+    DM11_pt1:    {title: "DM11 20<=p_{t_{#tau}}<200"}
+
+tid_SFRegions:
+    DM0:     {title: "DM0"}
+    DM1:     {title: "DM1"}
+    DM2:     {title: "DM2"}
+    DM10:    {title: "DM10"}
+    DM11:    {title: "DM11"}
+    DM0_pt1:    {title: "DM0 20<p_{t_{#tau}}<30"}
+    DM0_pt2:    {title: "DM0 30<=p_{t_{#tau}}<40"}
+    DM0_pt3:    {title: "DM0 40<=p_{t_{#tau}}<200"}
+    DM1_pt1:    {title: "DM1 20<p_{t_{#tau}}<30"}
+    DM1_pt2:    {title: "DM1 30<=p_{t_{#tau}}<40"}
+    DM1_pt3:    {title: "DM1 40<=p_{t_{#tau}}<200"}
+    DM2_pt1:    {title: "DM2 20<p_{t_{#tau}}<30"}
+    DM2_pt2:    {title: "DM2 30<=p_{t_{#tau}}<40"}
+    DM2_pt3:    {title: "DM2 40<=p_{t_{#tau}}<200"}
+    DM10_pt1:   {title: "DM10 20<p_{t_{#tau}}<30"}
+    DM10_pt2:   {title: "DM10 30<=p_{t_{#tau}}<40"}
+    DM10_pt3:   {title: "DM10 40<=p_{t_{#tau}}<200"}
+    DM11_pt1:    {title: "DM11 20<=p_{t_{#tau}}<200"}
+
+processes: ["ZTT","ZL","ZJ","W","VV","ST","TTT","TTL","TTJ","QCD","data_obs"]
+
+# Values match the WHAM fit configs one-to-one (Configurations/tau_sf/*/
+# tau_sf_dm*.yaml), so the two fits are directly comparable.
+systematics:
+    LTF:
+        effect: "shape"
+        processes: ["ZL", "TTL"]
+        name: "shape_mTauFake_$BIN"
+        title: "+/- 3% LTF shape"
+        variations: ["Up", "Down"]
+    JTF:
+        effect: "shape"
+        processes: ["ZJ", "TTJ", "W"]
+        name: "shape_jTauFake_$BIN"
+        title: "+/- 10% JTF"
+        variations: ["Up", "Down"]
+    lumi:
+        effect: "lnN"
+        processes: ["ZTT", "ZL", "ZJ", "TTT", "TTL", "TTJ", "W", "ST", "VV"]
+        scaleFactor: 1.025
+    eff_m:
+        effect: "lnN"
+        processes: ["ZTT", "ZL", "ZJ", "TTT", "TTL", "TTJ", "W", "ST", "VV"]
+        scaleFactor: 1.02
+    muonFakerate:
+        effect: "lnN"
+        processes: ["ZL", "TTL"]
+        scaleFactor: 1.50
+    xsec_dy:
+       effect: "lnN"
+       processes: ["ZTT", "ZL", "ZJ"]
+       scaleFactor: 1.02
+    xsec_tt:
+        effect: "lnN"
+        processes: ["TTT", "TTL", "TTJ"]
+        scaleFactor: 1.06
+    xsec_st:
+        effect: "lnN"
+        processes: ["ST"]
+        scaleFactor: 1.05
+    xsec_vv:
+        effect: "lnN"
+        processes: ["VV"]
+        scaleFactor: 1.05
+    norm_wj:
+        effect: "lnN"
+        processes: ["W"]
+        scaleFactor: 1.08
+    norm_qcd:
+        effect: "lnN"
+        processes: ["QCD"]
+        scaleFactor: 1.20
+    rate_jTauFake_$BIN:
+        effect: "lnN"
+        processes: ["W","QCD","ZJ","TTJ"]
+        scaleFactor: 1.15

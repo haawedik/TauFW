@@ -13,14 +13,17 @@ def main():
                         help="uncorr: per-region 2D scan; corr: per-DM TES scan; fullcorr: per-DM TES+TauID scan")
     parser.add_argument('--tagger', type=str, default='',
                         help="tree tagger suffix (e.g. pnet, upart); '' = DeepTau default")
+    parser.add_argument('--poi-only', dest='poi_only', action='store_true', default=False,
+                        help="combine the POI-only postfit plots (runpostfit --poi-only output tree)")
     args = parser.parse_args()
-    # Variant defaults (+ tagger suffix so it matches runpostfit's output_plots tree)
+    # Variant defaults (+ tagger/poionly suffixes so it matches runpostfit's output_plots tree)
     _suffix = {'corr': '_corrTES', 'fullcorr': '_fullcorr', 'uncorr': ''}[args.variant]
     _tt = ("_" + args.tagger) if args.tagger else ""
+    _poi = "_poionly" if args.poi_only else ""
     if args.img_dir is None:
-        args.img_dir = f"./output_plots{_suffix}{_tt}/"
+        args.img_dir = f"./output_plots{_suffix}{_tt}{_poi}/"
     if args.out_dir is None:
-        args.out_dir = f"./combined_pre_post{_suffix}{_tt}/"
+        args.out_dir = f"./combined_pre_post{_suffix}{_tt}{_poi}/"
     
     IMG_DIR = args.img_dir + f"jet_{args.jet_wp}_ele_{args.ele_wp}/"
     OUT_DIR = args.out_dir + f"jet_{args.jet_wp}_ele_{args.ele_wp}/"

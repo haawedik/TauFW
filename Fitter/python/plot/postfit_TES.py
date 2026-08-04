@@ -21,6 +21,23 @@ def set_negative_bins_to_zero(hist):
             hist.SetBinError(bin, 0)  # Optional: Set bin error to zero if desired
 
 
+def ref_bin_width(hist):
+    """The region's nominal bin width = the most common one."""
+    widths = [round(hist.GetXaxis().GetBinWidth(i), 6) for i in range(1, hist.GetNbinsX() + 1)]
+    return max(set(widths), key=widths.count)
+
+
+def scale_to_ref_width(hist, refwidth):
+    """Scale wider (merged) bins so every bin shows events per refwidth GeV;
+    without this a merged bin bulges by its width ratio under the fixed y-title."""
+    for i in range(1, hist.GetNbinsX() + 1):
+        f = refwidth / hist.GetXaxis().GetBinWidth(i)
+        if abs(f - 1.0) < 1e-9:
+            continue
+        hist.SetBinContent(i, hist.GetBinContent(i) * f)
+        hist.SetBinError(i, hist.GetBinError(i) * f)
+
+
 def drawpostfit(fname,region,procs,**kwargs):
   """Plot pre- and post-fit plots PostFitShapesFromWorkspace."""
   print(">>>\n>>> drawpostfit(%r,%r)"%(fname,region))
@@ -73,7 +90,8 @@ def drawpostfit(fname,region,procs,**kwargs):
       return
     obshist = None
     exphists = [ ]
-    
+    refwidth = None
+
     # GET HIST
     for proc in procs: #reversed(samples):
       hname = "%s/%s"%(fitdirname,proc)
@@ -86,6 +104,9 @@ def drawpostfit(fname,region,procs,**kwargs):
 
       # Set negative bin values to zero
       set_negative_bins_to_zero(hist)
+      if refwidth is None:
+        refwidth = ref_bin_width(hist)
+      scale_to_ref_width(hist,refwidth) # merged bins -> events per refwidth GeV
       groups  = [
       # (['^TT*'],'Top','ttbar'), #,STYLE.sample_colors['TT']),
       (['^TT*','ST*'],'Top','ttbar and single top'),
@@ -118,16 +139,20 @@ def drawpostfit(fname,region,procs,**kwargs):
     xmax       = xmax or exphists[0].GetXaxis().GetXmax()
     xmin       = xmin or exphists[0].GetXaxis().GetXmin()
     errtitle   = "Pre-fit stat. + syst. unc." if fit=='prefit' else "Post-fit unc."
-    ytitle     = "Events/10 GeV" # hardcoded for paper
+    ytitle     = "Events / %g GeV"%(refwidth) # 5 GeV regions were mislabelled by the old 10 GeV hardcode
     # pname_     = repkey(pname,FIT=fit,ERA=era)+region
     pname_ = fit + "_"+region
     rmin, rmax = (0.85,1.15) #if fit=='postfit' else (0.80,1.20)
+    if 'DM11' in region: # prefit data/MC reaches ~0.70 below the Z peak (tid_SF~0.8)
+      rmin, rmax = (0.65,1.35)
     print(" pname_ = %r"%(pname_))
 
    
 
     print(">>>   Draw %s"%(pname_))
-    plot = Stack(xtitle,obshist,exphists)
+    # dividebins=False: DM11 hists carry variable-bin storage (uniform 10 GeV
+    # edges written as an explicit array), which would trip divide-by-bin-width
+    plot = Stack(xtitle,obshist,exphists,dividebins=False)
     plot.draw(xmin=xmin,xmax=xmax,ymax=ymax,square=square,ratio=ratio,rmin=rmin,rmax=rmax,
               staterror=True,errtitle=errtitle,lcolors=kBlack,xtitle="m_{vis}[GeV]",ytitle=ytitle)
     plot.drawtext(text)

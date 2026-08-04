@@ -1,16 +1,48 @@
 #!/usr/bin/env python3
 """Combine 2D-scan PNGs into a grid (rows=DM, cols=pt) per WP combo.
 
-Both variants produce 12 scan_2D_*.png files; only the POI names in the
-filename differ. The --variant flag picks the right name pattern.
+Rows and columns are DISCOVERED from the scan PNGs present in each folder,
+so the grid tracks the region scheme automatically (13 ragged regions since
+2026-07-28: DM{0,1,2,10} x pt{1..3} + a single DM11_pt1). Cells absent from
+a ragged row (e.g. DM11 pt2/pt3) stay blank; the found/total count printed
+per grid flags real gaps. The --variant flag picks the filename pattern.
 """
 import argparse
 import os
+import re
 import sys
 from PIL import Image, ImageDraw, ImageFont
 
-DMS = ["DM0", "DM1", "DM10", "DM11"]
-PTS = ["pt1", "pt2", "pt3", "pt4", "pt5"]
+# capture (dm, pt) from each variant's scan png name; [A-Za-z0-9] (not \w)
+# so the DM token cannot swallow underscores
+SCAN_RE = {
+    "uncorr":   re.compile(r"^scan_2D_tes_(DM[A-Za-z0-9]+)_(pt\d+)_tid_SF_.*multidimfit\.png$"),
+    "corr":     re.compile(r"^scan_2D_tes_(DM[A-Za-z0-9]+)_tid_SF_DM[A-Za-z0-9]+_(pt\d+)_mt_.*multidimfit\.png$"),
+    "fullcorr": re.compile(r"^scan_2D_tes_(DM[A-Za-z0-9]+)_tid_SF_DM[A-Za-z0-9]+_mt_.*multidimfit\.png$"),
+}
+
+
+def _dm_key(dm):
+    m = re.search(r"\d+", dm)
+    return (0, int(m.group()), dm) if m else (1, 0, dm)  # DM2 < DM10; DMrest last
+
+
+def _pt_key(pt):
+    m = re.search(r"\d+", pt)
+    return int(m.group()) if m else 0
+
+
+def discover(folder, variant):
+    """(dms, pts) present in this folder, naturally sorted."""
+    rx = SCAN_RE[variant]
+    dms, pts = set(), set()
+    for fn in os.listdir(folder):
+        m = rx.match(fn)
+        if not m:
+            continue
+        dms.add(m.group(1))
+        pts.add("combined" if variant == "fullcorr" else m.group(2))
+    return sorted(dms, key=_dm_key), sorted(pts, key=_pt_key)
 
 
 def find_scan(folder, dm, pt):
@@ -35,8 +67,14 @@ def find_fullcorr_scan(folder, dm, pt):
     return path if os.path.isfile(path) else None
 
 
-def build_grid(folder, out_path, title=None, finder=find_scan):
-    cells = [[finder(folder, dm, pt) for pt in PTS] for dm in DMS]
+def build_grid(folder, out_path, title=None, finder=find_scan, variant="uncorr", dms=None):
+    disc_dms, pts = discover(folder, variant)
+    dms = dms or disc_dms
+    if not dms or not pts:
+        print(f"  no scans found in {folder}, skipping")
+        return False
+
+    cells = [[finder(folder, dm, pt) for pt in pts] for dm in dms]
     found = [p for row in cells for p in row if p]
     if not found:
         print(f"  no scans found in {folder}, skipping")
@@ -51,8 +89,8 @@ def build_grid(folder, out_path, title=None, finder=find_scan):
     title_h = 70 if title else 0
     pad = 8
 
-    grid_w = label_w + len(PTS) * cw + (len(PTS) + 1) * pad
-    grid_h = title_h + label_h + len(DMS) * ch + (len(DMS) + 1) * pad
+    grid_w = label_w + len(pts) * cw + (len(pts) + 1) * pad
+    grid_h = title_h + label_h + len(dms) * ch + (len(dms) + 1) * pad
 
     canvas = Image.new("RGB", (grid_w, grid_h), "white")
     draw = ImageDraw.Draw(canvas)
@@ -67,34 +105,31 @@ def build_grid(folder, out_path, title=None, finder=find_scan):
     if title:
         draw.text((pad, pad), title, fill="black", font=font)
 
-    for j, pt in enumerate(PTS):
+    for j, pt in enumerate(pts):
         x = label_w + pad + j * (cw + pad) + cw // 2
         y = title_h + pad
         bbox = draw.textbbox((0, 0), pt, font=font_small)
         draw.text((x - (bbox[2] - bbox[0]) // 2, y), pt, fill="black", font=font_small)
 
-    for i, dm in enumerate(DMS):
+    for i, dm in enumerate(dms):
         x = pad
         y = title_h + label_h + pad + i * (ch + pad) + ch // 2
         bbox = draw.textbbox((0, 0), dm, font=font_small)
         draw.text((x, y - (bbox[3] - bbox[1]) // 2), dm, fill="black", font=font_small)
 
-    for i, dm in enumerate(DMS):
-        for j, pt in enumerate(PTS):
+    for i, dm in enumerate(dms):
+        for j, pt in enumerate(pts):
             path = cells[i][j]
+            if not path:
+                continue  # ragged scheme (e.g. single DM11 region) — leave blank
             x = label_w + pad + j * (cw + pad)
             y = title_h + label_h + pad + i * (ch + pad)
-            if path:
-                img = Image.open(path)
-                canvas.paste(img, (x, y))
-                img.close()
-            else:
-                draw.rectangle([x, y, x + cw, y + ch], outline="gray", width=2)
-                msg = f"{dm} {pt}\n(missing)"
-                draw.text((x + cw // 2 - 60, y + ch // 2 - 20), msg, fill="gray", font=font_small)
+            img = Image.open(path)
+            canvas.paste(img, (x, y))
+            img.close()
 
     canvas.save(out_path)
-    print(f"  wrote {out_path}  ({len(found)}/{len(DMS)*len(PTS)} cells)")
+    print(f"  wrote {out_path}  ({len(found)}/{len(dms)*len(pts)} cells)")
     return True
 
 
@@ -115,15 +150,14 @@ def walk_wps(root):
 
 
 def main():
-    global PTS, DMS  # fullcorr collapses to a single per-DM column; DMS may grow for PNet/UParT
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=None,
                     help="root dir (defaults depend on --variant)")
     ap.add_argument("--variant", choices=["uncorr", "corr", "fullcorr"], default="uncorr")
-    ap.add_argument("--dms", default=",".join(DMS),
-                    help="comma-separated DM rows (e.g. DM0,DM1,DM2,DM10,DM11,DMrest for PNet/UParT)")
+    ap.add_argument("--dms", default=None,
+                    help="comma-separated DM rows to force (default: discovered per folder)")
     args = ap.parse_args()
-    DMS = [d for d in args.dms.split(",") if d]
+    dms = [d for d in args.dms.split(",") if d] if args.dms else None
 
     _suffix = {'corr': '_corrTES', 'fullcorr': '_fullcorr', 'uncorr': ''}[args.variant]
     if args.root is None:
@@ -132,14 +166,7 @@ def main():
     if not os.path.isdir(args.root):
         sys.exit(f"root not found: {args.root}")
 
-    if args.variant == "corr":
-        finder = find_corr_scan
-    elif args.variant == "fullcorr":
-        finder = find_fullcorr_scan
-        # fullcorr: 1 scan per DM, no pT split — collapse to single column
-        PTS = ["combined"]
-    else:
-        finder = find_scan
+    finder = {"uncorr": find_scan, "corr": find_corr_scan, "fullcorr": find_fullcorr_scan}[args.variant]
 
     n = 0
     for jet_wp, ele_wp, year, folder in walk_wps(args.root):
@@ -147,7 +174,7 @@ def main():
         out_name = f"grid_{args.variant}_{jet_wp}_{ele_wp}_{year}.png"
         out_path = os.path.join(folder, out_name)
         print(f"[{jet_wp} / {ele_wp} / {year}]")
-        if build_grid(folder, out_path, title=title, finder=finder):
+        if build_grid(folder, out_path, title=title, finder=finder, variant=args.variant, dms=dms):
             n += 1
     print(f"done: {n} grid(s) written")
 

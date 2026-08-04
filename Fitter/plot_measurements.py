@@ -15,7 +15,13 @@ TREE_TAG = ""  # tagger suffix for the output/postfit trees (e.g. "_pnet"); set 
 def load_measurements_corr(ele_wp, jet_wp, year):
     """corrTES loader: one param/fitdiag file per DM contains 4 POIs (1 TES + 3 TauID);
        expand each into 3 measurement records (one per pT bin) sharing the TES value."""
-    PT_RANGES = {'pt1': '20-30 GeV', 'pt2': '30-40 GeV', 'pt3': '40-50 GeV', 'pt4': '50-60 GeV', 'pt5': '60-200 GeV'}
+    # merged scheme: pt3 = 40-200 (pt3+pt4 merge); DM11 is a single
+    # pt1 = 20-200 region (low stats)
+    PT_RANGES = {'pt1': '20-30 GeV', 'pt2': '30-40 GeV', 'pt3': '40-200 GeV'}
+    def _pt_label(dm, pt):
+        if dm == 'DM11' and pt == 'pt1':
+            return '20-200 GeV'
+        return PT_RANGES.get(pt, pt)
     measurements = []
 
     # ---- MultiDimFit: per-DM param files ----
@@ -61,7 +67,7 @@ def load_measurements_corr(ele_wp, jet_wp, year):
             tid_err_d = abs(t['val'] - t['low'])  if t['low']  is not None else None
             tid_err_u = abs(t['high'] - t['val']) if t['high'] is not None else None
             measurements.append({
-                'type': 'MultiDimFit', 'region': f"{dm} {PT_RANGES[pt]}",
+                'type': 'MultiDimFit', 'region': f"{dm} {_pt_label(dm, pt)}",
                 'dm': dm, 'pt_bin': pt, 'jet_wp': jet_wp, 'ele_wp': ele_wp,
                 'tes_val': tes['val'], 'tes_err_down': tes_err_d, 'tes_err_up': tes_err_u,
                 'tid_val': t['val'],   'tid_err_down': tid_err_d, 'tid_err_up': tid_err_u,
@@ -98,7 +104,7 @@ def load_measurements_corr(ele_wp, jet_wp, year):
         for pt, (tv, te) in tid_per_pt.items():
             if tes_val is None: continue
             measurements.append({
-                'type': 'FitDiagnostics', 'region': f"{dm} {PT_RANGES.get(pt, pt)}",
+                'type': 'FitDiagnostics', 'region': f"{dm} {_pt_label(dm, pt)}",
                 'dm': dm, 'pt_bin': pt, 'jet_wp': jet_wp, 'ele_wp': ele_wp,
                 'tes_val': tes_val, 'tes_err_down': tes_err, 'tes_err_up': tes_err,
                 'tid_val': tv,      'tid_err_down': te,      'tid_err_up': te,

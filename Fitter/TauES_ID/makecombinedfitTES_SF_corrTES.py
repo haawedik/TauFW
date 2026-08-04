@@ -175,9 +175,9 @@ def merge_datacards_ZmmCR(setup, setup_mumu, era,extratag,region, output_dir, mu
     return outCRfile
     
 def run_combined_fit(setup, setup_mumu, option, **kwargs):
-    # tes_range    = kwargs.get('tes_range',    "0.950,1.050")
-    tes_range    = kwargs.get('tes_range',    "%s,%s" %(min(setup["TESvariations"]["values"]), max(setup["TESvariations"]["values"]))                         )
-    tid_SF_range = kwargs.get('tid_SF_range', "0.5,1.2")
+    tes_range    = kwargs.get('tes_range',    "0.970,1.030")
+    #tes_range    = kwargs.get('tes_range',    "%s,%s" %(min(setup["TESvariations"]["values"]), max(setup["TESvariations"]["values"]))                         )
+    tid_SF_range = kwargs.get('tid_SF_range', "0.70,1.05")
     extratag     = kwargs.get('extratag',     "_DeepTau")
     algo         = kwargs.get('algo',         "--algo=grid") #--alignEdges=1 grid --fastScan
     npts_fit     = kwargs.get('npts_fit',     "--points=1600 ") ## 66  --points=10000 --robustFit=1 --setRobustFitAlgo=Minuit2 --setRobustFitStrategy=2 --setRobustFitTolerance=0.001 --robustHesse=1 --robustFit=1 --setRobustFitAlgo=Minuit2 --setRobustFitStrategy=2 --setRobustFitTolerance=0.001

@@ -3,15 +3,15 @@
 # Sibling of run_workflow_zmm.sh (uncorrelated TES). Uses parallel _corrTES scripts and
 # a separate output/plot tree so the two fits can be compared side-by-side.
 
-J_VALUES=("VVLoose" "Medium" "Loose" "Tight" "VTight" "VLoose") 
-E_VALUES=("Tight" "VVLoose") 
+J_VALUES=("VVTight") 
+E_VALUES=( "Tight" "VVLoose" )  # WHAM VSe scenarios (eVVLoose / eTight)
 
 YEAR="2024"
-CONFIG_TT="TauES_ID/config/config_coarse_TT.yml"
-CONFIG_MM="TauES/config/FitSetup_mumu.yml"
+CONFIG_TT="TauES_ID/config/config_wham_PNet.yml"
+CONFIG_MM="TauES/config/FitSetup_mumu_wham.yml"
 
 # Separate I/O tree for the corrTES variant — keep uncorrelated outputs intact
-INPUT_ROOT="input_pt_less_region"           # inputs are shared with the uncorrelated workflow
+INPUT_ROOT="input_pt_less_region"  # WHAM-exported inputs (wham export); drivers map this -> output_pt_less_region_corrTES
 OUTPUT_ROOT="output_pt_less_region_corrTES"
 PLOTS_ROOT="plots_pt_less_region_corrTES"
 
@@ -44,7 +44,7 @@ for JET_WP in "${J_VALUES[@]}"; do
     PULL_TOOL="${CMSSW_BASE}/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py"
     PULLDIR="${BASE_PLOTS}/${YEAR}/pulls"
     mkdir -p "${PULLDIR}"
-    for DM in DM0 DM1 DM10 DM11; do
+    for DM in DM0 DM1 DM2 DM10 DM11; do
       FD="${BASE_POSTFIT}/${YEAR}/fitDiagnostics.mt_m_vis-${DM}_mutau_DeepTau-${YEAR}-13TeV.root"
       if [ ! -f "${FD}" ]; then echo "  [pulls] missing ${FD} — skip ${DM}"; continue; fi
       PULLTXT="${PULLDIR}/pulls_${JET_WP}_${ELE_WP}_${DM}.txt"
@@ -55,7 +55,13 @@ for JET_WP in "${J_VALUES[@]}"; do
     echo "=== Step 3: Plots ==="
     python3 python/plot/runpostfit.py --variant corr -c $CONFIG_TT -j ${JET_WP} -e ${ELE_WP} -y $YEAR --include-cr \
       2>&1 | tee step3_plots_corrTES_${JET_WP}_${ELE_WP}.log
+    # POI-only postfit: fitted tes/tid_SF applied, nuisances at prefit
+    # (no --include-cr: the Zmm CR has no POI, its POI-only postfit == prefit)
+    python3 make_poionly_postfit.py -j ${JET_WP} -e ${ELE_WP} -y $YEAR
+    python3 python/plot/runpostfit.py --variant corr -c $CONFIG_TT -j ${JET_WP} -e ${ELE_WP} -y $YEAR --poi-only \
+      2>&1 | tee step3_plots_poionly_${JET_WP}_${ELE_WP}.log
     python3 pre_post_plot_combiner.py --variant corr --scan_dir ${BASE_PLOTS}/$YEAR/ --jet_wp ${JET_WP} --ele_wp ${ELE_WP}
+    python3 pre_post_plot_combiner.py --variant corr --scan_dir ${BASE_PLOTS}/$YEAR/ --jet_wp ${JET_WP} --ele_wp ${ELE_WP} --poi-only
     python3 plot_measurements.py --variant corr --jet_wp ${JET_WP} --ele_wp ${ELE_WP} --year $YEAR
 
     echo "=== Step 4: Correction file generation (corrTES) ==="
@@ -78,6 +84,6 @@ echo "=== 1D profile NLLs from per-DM joint fits ==="
 python3 plot1D_NLL_profiles.py --variant corr --year $YEAR
 
 echo "=== Building combined TauEnergy_SF + TauID_SF (corrTES variant) ==="
-python3 make_tid_2025.py --variant corr -y $YEAR
+python3 make_tid_2025.py --variant corr -y $YEAR -c $CONFIG_TT
 
 echo "All corrTES workflows completed!"

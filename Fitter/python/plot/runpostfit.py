@@ -20,6 +20,10 @@ def main(args):
     else:
         postfit_root = './postfit_pt_less_region' + _tt
         outroot      = 'output_plots' + _tt
+    # POI-only companion files (make_poionly_postfit.py): postfit = fitted POIs
+    # with all nuisances at prefit; plots go to a separate output tree
+    _poi = '_poionly' if getattr(args, 'poi_only', False) else ''
+    outroot += _poi
 
     for config in configs:
         if not config.endswith(".yml"): # config = channel name
@@ -42,8 +46,8 @@ def main(args):
         else:
             shape_label = region
 
-        fname = '%s/againstjet_%s/againstelectron_%s/%s/PostFitShape_%s__mutau_%s.root' % (
-                postfit_root, againstjet, againstelectron, era, era, shape_label)
+        fname = '%s/againstjet_%s/againstelectron_%s/%s/PostFitShape_%s__mutau_%s%s.root' % (
+                postfit_root, againstjet, againstelectron, era, era, shape_label, _poi)
         procs = setup["processes"]
         text  = setup["regions"][region]["title"]
         print(">>>   Title: %s"%(text))
@@ -90,6 +94,8 @@ if __name__ == "__main__":
     parser.add_argument('-y', '--year', dest='year', default='2024', help="year for plotting")
     parser.add_argument('--variant', dest='variant', choices=['uncorr','corr','fullcorr'], default='uncorr',
                                          help="fit variant: uncorr (per-region), corr (per-DM TES), fullcorr (per-DM TES+TauID)")
+    parser.add_argument('--poi-only', dest='poi_only', action='store_true', default=False,
+                                         help="plot the _poionly shape files: postfit = fitted POIs only, nuisances at prefit" )
     parser.add_argument('--tagger', dest='tagger', type=str, default='',
                                          help="tree tagger suffix (e.g. pnet, upart); '' = DeepTau default")
 

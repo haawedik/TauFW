@@ -1,0 +1,49 @@
+## Config for the Z->mumu control region on WHAM-exported inputs (DY
+## normalization anchor for the TES + TauID SF fit; pair of
+## TauES_ID/config/config_wham_PNet.yml).
+##
+## INPUT IS NOT CREATED FROM PICOS: it is
+##   input_pt_less_region/againstjet_VVTight/againstelectron_{VVLoose,Tight}/
+##       ztt_mm_tes_m_vis.inputs-2024-13TeV_mumu.root
+## from the WHAM plotter (`wham export`, /eos/home-h/haawedik/WHAM-plot). One
+## counting bin `baseline` over m_mumu in [70,110] (edges differ from the old
+## [40,150] inputs — irrelevant for a single-bin card). Processes: ZL = Z->mumu
+## (dominant), ZTT = Z->tautau, ZJ = Z->ee (ZERO histogram — kept so this
+## process list needs no editing), W, VV, TT (TTto*), ST (ST_tW_*), QCD (ABCD).
+##
+## Run (from Fitter/):
+##   python3 TauES_ID/harvestDatacards_zmm.py -y 2024 \
+##     -c TauES/config/FitSetup_mumu_wham.yml -e "" \
+##     -i input_pt_less_region/againstjet_VVTight/againstelectron_VVLoose -o <outdir>
+
+channel: mumu
+
+tag: "_mumu"
+
+# WHAM baseline (documentation): pt_1>26 && pt_2>25 && abs(eta)<2.4 &&
+# iso_1<0.15 && single-muon trigger; iso_2 is the ABCD axis for QCD.
+baselineCuts: "q_1*q_2<0 && iso_1<0.15 && iso_2<0.15"
+
+# provenance only — inputs come pre-merged from WHAM
+samples:
+    data: "data_obs"
+
+observables:
+    m_vis:
+        binning: [1, 70, 110]
+        extra:
+            ymargin: 1.6
+            rrange: 0.20
+        fitRegions: ["baseline"]
+
+processes: ['ZL', 'ZTT', 'ZJ', 'W', 'VV', 'ST', 'TT', 'QCD', 'data_obs']
+
+# The single nuisance: the huge Z->mumu yield pins xsec_dy to the observed
+# data/MC ratio, transferring the DY normalization to ZTT in the mutau bins
+# (all other processes enter unconstrained at their MC rate, as in the
+# original FitSetup_mumu.yml).
+systematics:
+    xsec_dy:
+        effect: "lnN"
+        processes: ["ZTT", "ZL", "ZJ"]
+        scaleFactor: 1.02

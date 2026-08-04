@@ -52,8 +52,9 @@ def load_param_file(path):
 
 
 def run_combined_fit(setup, setup_mumu, option, args, **kwargs):
-    tes_range    = kwargs.get('tes_range', f"{min(setup['TESvariations']['values'])},{max(setup['TESvariations']['values'])}")
-    tid_SF_range = kwargs.get('tid_SF_range', "0.50,1.2")
+    tes_range    = kwargs.get('tes_range',    "0.970,1.030")
+    # tes_range    = kwargs.get('tes_range', f"{min(setup['TESvariations']['values'])},{max(setup['TESvariations']['values'])}")
+    tid_SF_range = kwargs.get('tid_SF_range', "0.70,1.050")
     extratag     = kwargs.get('extratag', "_DeepTau")
     save_opts    = kwargs.get('save_opts', " --saveShapes")
     era          = kwargs.get('era', "")

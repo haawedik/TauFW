@@ -1,17 +1,36 @@
 #!/usr/bin/env python3
-"""Combine per-WP TauID and TES measurement PNGs into 6x2 grids."""
+"""Combine per-WP TauID and TES measurement PNGs into a grid.
+
+Rows (VSjet WPs) and columns (VSele WPs) are discovered from the
+VSjet<X>_VSele<Y> subdirectories present in --dir, so the grid follows
+whatever WP combos the workflow actually ran (e.g. only VVTight x
+{VVLoose,Tight} in the WHAM PNet setup)."""
 import os
+import re
 import sys
 import argparse
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-JET_WPS = ["VVLoose", "VLoose", "Loose", "Medium", "Tight", "VTight"]
-ELE_WPS = ["VVLoose", "Tight"]
+WP_ORDER = {"VVLoose": 0, "VLoose": 1, "Loose": 2, "Medium": 3,
+            "Tight": 4, "VTight": 5, "VVTight": 6}
 QUANTITIES = ["tauID_measurements", "tes_measurements"]
 
 
-def build_grid(measurements_dir, quantity, out_path):
+def discover_wps(measurements_dir):
+    """(jet_wps, ele_wps) from the VSjet<X>_VSele<Y> dirs present."""
+    jet_wps, ele_wps = set(), set()
+    for entry in os.listdir(measurements_dir):
+        m = re.match(r"^VSjet([A-Za-z]+)_VSele([A-Za-z]+)$", entry)
+        if m and os.path.isdir(os.path.join(measurements_dir, entry)):
+            jet_wps.add(m.group(1))
+            ele_wps.add(m.group(2))
+    key = lambda wp: WP_ORDER.get(wp, 99)
+    return sorted(jet_wps, key=key), sorted(ele_wps, key=key)
+
+
+def build_grid(measurements_dir, quantity, out_path, jet_wps, ele_wps):
+    JET_WPS, ELE_WPS = jet_wps, ele_wps
     nrows, ncols = len(JET_WPS), len(ELE_WPS)
     fig, axes = plt.subplots(nrows, ncols, figsize=(6 * ncols, 5 * nrows))
     if nrows == 1: axes = [axes]
@@ -57,8 +76,12 @@ def main():
     out_dir = args.out or args.dir
     os.makedirs(out_dir, exist_ok=True)
 
+    jet_wps, ele_wps = discover_wps(args.dir)
+    if not jet_wps:
+        print(f"ERROR: no VSjet*_VSele* dirs in {args.dir}"); sys.exit(1)
+    print(f"[grid] WP combos found: VSjet {jet_wps} x VSele {ele_wps}")
     for q in QUANTITIES:
-        build_grid(args.dir, q, os.path.join(out_dir, f"grid_{q}.png"))
+        build_grid(args.dir, q, os.path.join(out_dir, f"grid_{q}.png"), jet_wps, ele_wps)
 
 
 if __name__ == "__main__":
