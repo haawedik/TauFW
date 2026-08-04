@@ -63,67 +63,75 @@ def create_combined_correction(input_dir, output_filename, correction_type="tes"
         fout.write(cset.json(exclude_unset=True))
     
     print(f">>> Successfully created {correction_type.upper()} correction file")
-    
+
     # Test the correction
-    test_correction(output_filename, combined_corr)
+    if not test_correction(output_filename, combined_corr):
+        raise SystemExit(1)
+
+
+def _wp_combos(node, _acc=None):
+    """Distinct WP-axis paths ({input: key}) above the genmatch level of the
+    correction data tree — i.e. the WP combinations actually in the file."""
+    _acc = _acc or {}
+    if getattr(node, "nodetype", None) != "category" or node.input == "genmatch":
+        return [dict(_acc)]
+    combos = []
+    for item in node.content:
+        combos.extend(_wp_combos(item.value, {**_acc, node.input: item.key}))
+    seen, out = set(), []
+    for c in combos:
+        key = tuple(sorted(c.items()))
+        if key not in seen:
+            seen.add(key)
+            out.append(c)
+    return out
 
 
 def test_correction(filename, combined_corr):
-    """Test the created correction file."""
-    print(f"\n>>> Testing correction...")
+    """Evaluate nom/up/down for every WP combination actually present in the
+    file (never hardcoded WPs). Returns True only if all evaluations succeed."""
+    print(f"\n>>> Testing correction {combined_corr.name}...")
     try:
         import correctionlib
         cset = correctionlib.CorrectionSet.from_file(filename)
         evaluator = cset[combined_corr.name]
-        
-        # Inspect inputs to build test arguments
+
         input_names = [inp.name for inp in combined_corr.inputs]
         print(f"  Inputs: {input_names}")
-        
-        # Define test values
-        test_values = {
-            "genmatch": 5,
-            "DM": 0,
-            "pT": 50.0,
-            "wp_VSjet": "Medium",
-            "wp_VSe": "VVLoose",
-            "wp_VSmu": "Tight",
-            "syst": "nom",
-        }
-        
-        # Build argument list in correct order
-        args = []
-        syst_idx = -1
-        for idx, name in enumerate(input_names):
-            if name in test_values:
-                args.append(test_values[name])
-            else:
-                print(f"  Warning: Unknown input '{name}', using default")
-                args.append(0)
-            
-            if name == "syst":
-                syst_idx = idx
+        combos = _wp_combos(combined_corr.data)
+        if not combos:
+            print(">>> Correction validation FAILED: no WP combinations found in the data")
+            return False
 
-        # Run test
-        if syst_idx >= 0:
-            for var in ['nom', 'up', 'down']:
-                current_args = list(args)
-                current_args[syst_idx] = var
-                try:
-                    result = evaluator.evaluate(*current_args)
-                    print(f"  Test {var}: {result:.6f}")
-                except Exception as e:
-                    print(f"  Test {var} failed: {e}")
-        else:
-            result = evaluator.evaluate(*args)
-            print(f"  Test nominal: {result:.6f}")
-            
+        failed = []
+        for combo in combos:
+            for dm in (0, 11):  # 11 exercises the single-pT-bin DM
+                for var in ("nom", "up", "down"):
+                    values = {"genmatch": 5, "DM": dm, "pT": 50.0, "syst": var, **combo}
+                    args = []
+                    for name in input_names:
+                        if name not in values:
+                            print(f"  Warning: Unknown input '{name}', using default")
+                        args.append(values.get(name, 0))
+                    label = ", ".join(f"{k}={v}" for k, v in combo.items()) + f", DM={dm}, {var}"
+                    try:
+                        result = evaluator.evaluate(*args)
+                        print(f"  Test [{label}]: {result:.6f}")
+                    except Exception as e:
+                        print(f"  Test [{label}] FAILED: {e}")
+                        failed.append(label)
+
+        if failed:
+            print(f">>> Correction validation FAILED ({len(failed)} evaluation(s), see above)")
+            return False
         print(f">>> Correction validation successful!")
-        
+        return True
+
     except Exception as e:
         print(f">>> ERROR testing correction: {e}")
         import traceback
         traceback.print_exc()
+        return False
 
 
 def create_combined_both_corrections(input_dir, output_filename, variant="uncorr", label=""):
@@ -163,10 +171,11 @@ def create_combined_both_corrections(input_dir, output_filename, variant="uncorr
         fout.write(combined_cset.json(exclude_unset=True))
     
     print(f">>> Successfully created combined file with {len(corrections_list)} correction(s)")
-    
-    # Test each correction
-    for corr in corrections_list:
-        test_correction(output_filename, corr)
+
+    # Test each correction (always test all, then fail if any did)
+    results = [test_correction(output_filename, corr) for corr in corrections_list]
+    if not all(results):
+        raise SystemExit(1)
 
 
 def create_single_correction(input_dir, correction_type, variant="uncorr", label=""):

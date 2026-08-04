@@ -253,7 +253,16 @@ def load_sf_measurements(setup, year, **kwargs):
                         val = data['val']
                         low = data.get('low', val) # Default to val (0 error) if missing
                         high = data.get('high', val)
-                        
+                        if low > val or high < val:
+                            # abs() below would silently mirror a mis-ordered bound
+                            print(f"[WARNING] {sf} {reg}: 1sigma bounds [{low}, {high}] "
+                                  f"do not bracket the nominal {val} -- check the "
+                                  f"FitparameterValues file (interpolate_scan_errors.py?)")
+                        if low == val or high == val:
+                            print(f"[WARNING] {sf} {reg}: zero {'lower' if low == val else 'upper'} "
+                                  f"error (1sigma edge == nominal {val}); run "
+                                  f"interpolate_scan_errors.py to de-quantize the scan interval")
+
                         # Calculate errors
                         # The file has absolute values for 1sigma bounds
                         err_down = abs(val - low)
@@ -315,14 +324,27 @@ def plot_dm_graph(setup, form, ele_wp, jet_wp, **kwargs):
     if not dm_order:
         dm_order = ["DM0", "DM1", "DM10", "DM11"]
 
-    # Define pt edges for each pt bin (adjust these based on your actual pt ranges)
-    pt_bin_edges = { # should be configurable in the yml file, but for now hardcoded based on typical pt binning
+    # Legacy fallback pt edges per pt bin (old 5-bin DeepTau scheme). The real
+    # edges are parsed per REGION from the config titles ("..., pt: LO-HI")
+    # below — required since pt4 became 50-200 (pt4+pt5 merge) and DM11 a
+    # single pt1 = 20-200 region.
+    pt_bin_edges = {
         "pt1": [20.0, 30.0],
         "pt2": [30.0, 40.0],
         "pt3": [40.0, 50.0],
         "pt4": [50.0, 60.0],
         "pt5": [60.0, 200.0],
     }
+    region_pt_edges = {}
+    for _rname, _rcfg in (setup.get('regions') or {}).items():
+        _title = _rcfg.get('title', '')
+        if 'pt:' not in _title:
+            continue
+        try:
+            _lo, _hi = _title.split('pt:')[-1].split('-')[:2]
+            region_pt_edges[_rname] = [float(_lo.strip()), float(_hi.strip())]
+        except ValueError:
+            pass
 
     # Create a dictionary to store sf data
     sf_dict = {}
@@ -376,21 +398,21 @@ def plot_dm_graph(setup, form, ele_wp, jet_wp, **kwargs):
                         if has_pt_bins:
                             # We have pt binned measurements: collect the lower edge of every
                             # pt bin present, then append the upper edge of the highest one.
-                            pt_keys_present = []
+                            # Edges come from the config region titles (region_pt_edges);
+                            # the hardcoded pt_bin_edges is only a legacy fallback.
+                            elems_present = []
                             for elem in sorted_dm_list:
                                 m = _re.search(r'_pt(\d+)', elem)
                                 if not m:
                                     continue
-                                key = f"pt{m.group(1)}"
-                                if key not in pt_bin_edges:
+                                edges = region_pt_edges.get(elem) or pt_bin_edges.get(f"pt{m.group(1)}")
+                                if edges is None:
                                     continue
-                                lo = pt_bin_edges[key][0]
-                                if lo not in dm_pt_edges:
-                                    dm_pt_edges.append(lo)
-                                pt_keys_present.append(key)
-                            if pt_keys_present:
-                                last_key = max(pt_keys_present, key=lambda k: int(k[2:]))
-                                dm_pt_edges.append(pt_bin_edges[last_key][1])
+                                if edges[0] not in dm_pt_edges:
+                                    dm_pt_edges.append(edges[0])
+                                elems_present.append((int(m.group(1)), edges))
+                            if elems_present:
+                                dm_pt_edges.append(max(elems_present)[1][1])
                         else:
                             # Only inclusive measurement, use full pt range
                             dm_pt_edges = [20.0, 200.0]

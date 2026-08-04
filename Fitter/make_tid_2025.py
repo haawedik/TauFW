@@ -22,7 +22,7 @@ VSE_WPS    = ['VVLoose','Tight']
 DMS        = [0,1,10,11]
 LABEL      = 'DeepTau2018v2p5'        # filename tagger component (set from --config tagger)
 TID_LABEL  = 'DeepTau2018v2p5VSjet'   # correctionlib id label (set from --config tagger)
-PT_BINS    = [20.0,40.0,60.0,200.0]  # 3 pT bins for TauID (and TES uncorr)
+PT_BINS    = [20.0,30.0,40.0,200.0]  # 3 pT bins for TauID (and TES uncorr) — matches the measured edges
 TES_CORR_BINS = [20.0, 200.0]        # 1 inclusive bin for corrTES TES
 
 
@@ -101,8 +101,23 @@ def build_correction(prefix, name, tid_label, info, output_desc, year='2025',
                      variant='uncorr', pt_bins=None):
   """Read per-WP files matching `prefix`, return a single schema.Correction."""
   dmsfs = load_per_wp(prefix, year=year, variant=variant)
-  ptsfs = dm_average(dmsfs)
+  if not dmsfs:
+    raise SystemExit(f">>> ERROR: no '{prefix}_{LABEL}_{year}*' JSONs found in {SF_DIR} "
+                     f"(variant={variant}) -- run createroot_TES.py first and pass the "
+                     f"matching -c config (tagger block) so LABEL/VSjet WPs are right")
   bins  = pt_bins if pt_bins is not None else PT_BINS
+  # a pT-inclusive measurement (e.g. DM11: single [20,200] bin) is padded to the
+  # global edges with the same value in every bin; any other mismatch is fatal
+  nbins = len(bins) - 1
+  for wjet in dmsfs:
+    for wse in dmsfs[wjet]:
+      for dm, sflist in dmsfs[wjet][wse].items():
+        if len(sflist) == 1 and nbins > 1:
+          dmsfs[wjet][wse][dm] = sflist * nbins
+        elif len(sflist) != nbins:
+          raise SystemExit(f">>> ERROR: {prefix} VSjet{wjet}/VSele{wse} DM{dm} has "
+                           f"{len(sflist)} pT bins, expected {nbins} (edges {bins})")
+  ptsfs = dm_average(dmsfs)
   return makecorr_tid(
     ptsfs       = ptsfs,
     dmsfs       = dmsfs,
@@ -110,6 +125,7 @@ def build_correction(prefix, name, tid_label, info, output_desc, year='2025',
     id          = tid_label,
     era         = year,
     wps_VSe     = VSE_WPS,
+    vse_id      = 'DeepTau2018v2p5VSe',  # anti-e WP stays DeepTau in the PNet measurement
     dms         = DMS,
     bins        = bins,
     dmptbins    = bins,

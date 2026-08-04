@@ -231,6 +231,12 @@ def maketiddata_dmbin_syst(sfs, dm, ibin):
       { 'key': 'DM1_pt_bin2_down', 'value': sfs[0]-sfs[2] if ((dm == 1) and (ibin == 1)) else sfs[0] },
       { 'key': 'DM1_pt_bin3_up',   'value': sfs[0]+sfs[1] if ((dm == 1) and (ibin == 2)) else sfs[0] },
       { 'key': 'DM1_pt_bin3_down', 'value': sfs[0]-sfs[2] if ((dm == 1) and (ibin == 2)) else sfs[0] },
+      { 'key': 'DM2_pt_bin1_up',   'value': sfs[0]+sfs[1] if ((dm == 2) and (ibin == 0)) else sfs[0] },
+      { 'key': 'DM2_pt_bin1_down', 'value': sfs[0]-sfs[2] if ((dm == 2) and (ibin == 0)) else sfs[0] },
+      { 'key': 'DM2_pt_bin2_up',   'value': sfs[0]+sfs[1] if ((dm == 2) and (ibin == 1)) else sfs[0] },
+      { 'key': 'DM2_pt_bin2_down', 'value': sfs[0]-sfs[2] if ((dm == 2) and (ibin == 1)) else sfs[0] },
+      { 'key': 'DM2_pt_bin3_up',   'value': sfs[0]+sfs[1] if ((dm == 2) and (ibin == 2)) else sfs[0] },
+      { 'key': 'DM2_pt_bin3_down', 'value': sfs[0]-sfs[2] if ((dm == 2) and (ibin == 2)) else sfs[0] },
       { 'key': 'DM10_pt_bin1_up',  'value': sfs[0]+sfs[1] if ((dm == 10) and (ibin == 0)) else sfs[0] },
       { 'key': 'DM10_pt_bin1_down','value': sfs[0]-sfs[2] if ((dm == 10) and (ibin == 0)) else sfs[0] },
       { 'key': 'DM10_pt_bin2_up',  'value': sfs[0]+sfs[1] if ((dm == 10) and (ibin == 1)) else sfs[0] },
@@ -388,6 +394,7 @@ def makecorr_tid(ptsfs=None,dmsfs=None,Format='',**kwargs):
   ptbins   = kwargs.get('bins',[20.,25.,30.,35.,40.,500.,1000.,2000.])
   dmptbins = kwargs.get('dmptbins',[20.0, 40.0, 60.0, 200.0]) # 2025 binning: 3 pT bins per DM
   wps_VSe  = kwargs.get('wps_VSe',None) # VSe WPs
+  vse_id   = kwargs.get('vse_id',"DeepTau2018v2p5VSe") # anti-electron discriminator (DeepTau even for the PNet VSjet measurement)
   systkeys = kwargs.get('systs',['nom','up','down']) # keys/flags for systematic variations
   version  = kwargs.get('version',3)
   systkeys.sort(key=syst_sortkey) # sort nom, up, down
@@ -416,10 +423,10 @@ def makecorr_tid(ptsfs=None,dmsfs=None,Format='',**kwargs):
     #sf = { 'nom': 1.0, 'up': 0.2, 'down': 0.2, 'yearup': 0.2, 'yeardown': 0.2 } # dummy sf
     if wps_VSe:
       ptsfs = { wp: {wpe: [sf for i in range(len(ptbins)-1)] for wpe in wps_VSe} for wp in wps }
-      dmsfs = { wp: {wpe: {dm: sf for dm in dms} for wpe in wps_VSe} for wp in wps }
+      dmsfs = { wp: {wpe: {dm: [sf]*(len(dmptbins)-1) for dm in dms} for wpe in wps_VSe} for wp in wps }
     else:
       ptsfs = {wp: [sf for i in range(len(ptbins)-1)] for wp in wps}
-      dmsfs = {wp: {dm: sf for dm in dms} for wp in wps}
+      dmsfs = {wp: {dm: [sf]*(len(dmptbins)-1) for dm in dms} for wp in wps}
   #assert all(len(ptsfs[wp])==len(ptbins)-1 for wp in ptsfs), f"Number of SFs ({sfs}) does not match ({len(ptbins)-1})!"
   assert Format in ['Mar07','Jul18','Run3_Dec05', "Run3_May24"] or ptbins[-3]==500.,  f"Third-to-last bin ({ptbins[-3]}) should be 500!"
   assert Format in ['Mar07','Jul18','Run3_Dec05', "Run3_May24"] or ptbins[-2]==1000., f"Second-to-last bin ({ptbins[-2]}) should be 1000!"
@@ -461,8 +468,10 @@ def makecorr_tid(ptsfs=None,dmsfs=None,Format='',**kwargs):
   ]
   if wps_VSe: # only add wp_VSe if specified by user, or found in SF dict
     inputs += [
-      {'name': "wp_VSe", 'type': "string", 'description': getwpinfo(tid.replace("VSjet","VSe"),wps_VSe)},
+      {'name': "wp_VSe", 'type': "string", 'description': getwpinfo(vse_id,wps_VSe)},
     ]
+  dmlist = ",".join(str(d) for d in sorted(dms)) # actual DM list (e.g. 0,1,2,10,11)
+  nptbin = len(dmptbins)-1
   if Format == 'Mar07':
     syst_info = "Systematic variations for the pT-binned SF: "\
       "'up'/'down' (the total uncertainty) , "\
@@ -486,16 +495,12 @@ def makecorr_tid(ptsfs=None,dmsfs=None,Format='',**kwargs):
       "'syst_alleras_up'/'syst_alleras_down' (syst. uncertainty for low pT bins correlated by eras and DM-bins) , " \
       "'syst_$ERA_up'/'syst_$ERA_down' (syst. uncertainty for low pT bins uncorrelated by eras $ERA=2016_preVFP,2016_postVFP,2017,2018) , " \
       "'syst_$ERA_dm$DM_up'/'syst_$ERA_$DM_down' (syst. uncertainty for low pT bins uncorrelated by eras and DM $ERA=2016_preVFP,2016_postVFP,2017,2018) $DM=0,1,10,11 , "    
-  elif Format == 'Jul18' or Format == 'Run3_Dec05' or Format == "Run3_May24": # high pT SF for Run-3 now available
-    syst_info = "Systematic variations for the pT-binned SF: "\
-      "'up'/'down' (the total uncertainty) , "\
-      "'stat_highpT_bin1_up'/'stat_highpT_bin1_down' (stat. uncertainty for the 140<pt<200 bin) , " \
-      "'stat_highpT_bin2_up'/'stat_highpT_bin2_down' (stat. uncertainty for the pt>200 bin) , " \
-      "'syst_highpT_up'/'syst_highpT_down' (syst. uncertainty for high pT bins correlated by eras) , " \
-      "'syst_highpT_extrap_up'/'syst_highpT_extrap_down' (syst. uncertainty to account for the extrapolation of SF from measured pT regions to higher pT regions correlated by eras) , " \
-      "Systematic variations for the DM-binned SF: " \
-      "'up/down' (uncertainty variations MUST BE TREATED uncorrelated by DM = 0,1,10,11 and 1 - 5 pT bins" \
-      "The uncorrelated variations are also added to this iteration e.g. dm_X_pt_binY_up/down "
+  elif Format == 'Jul18' or Format == 'Run3_Dec05' or Format == "Run3_May24":
+    syst_info = "Systematic variations: 'nom'; "\
+      f"'up'/'down' = total uncertainty of the (DM, pT) cell, to be treated as uncorrelated "\
+      f"across DM ({dmlist}) and the {nptbin} pT bins; "\
+      f"'DM$DM_pt_bin$N_up'/'DM$DM_pt_bin$N_down' ($DM in {dmlist}; $N in 1..{nptbin}) = "\
+      "decorrelated variations shifting a single (DM, pT-bin) cell with all others held at nominal."
 
 
     #syst_info += "Systematic variations for the DM-binned SF: " \
@@ -529,11 +534,11 @@ def makecorr_tid(ptsfs=None,dmsfs=None,Format='',**kwargs):
   corr = schema.Correction.parse_obj({
     'version': version,
     'name': name,
-    'description': f"{tid} SFs in {era}, measured per (DM, pT-bin) over pT in [20, 200] GeV. "+\
+    'description': f"{info}, measured over pT in [{dmptbins[0]:g}, {dmptbins[-1]:g}] GeV. "+\
                    "Use flag='dm' for the per-DM, per-pT-bin SFs (default). "+\
                    "flag='pt' gives a DM-averaged pT-binned SF for analyses that don't categorize by DM. "+\
                    "Beyond the per-axis 'up'/'down' total uncertainty, the 'syst' axis also exposes "+\
-                   "DM{DM}_pt_bin{N}_up/down keys (DM in 0,1,10,11; N in 1,2,3) that vary a single "+\
+                   f"DM{{DM}}_pt_bin{{N}}_up/down keys (DM in {dmlist}; N in 1..{nptbin}) that vary a single "+\
                    "(DM, pT-bin) cell with all others held at nominal — for use as decorrelated "+\
                    "nuisances in a fit.",
     'inputs': inputs,
