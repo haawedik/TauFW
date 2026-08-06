@@ -5,12 +5,20 @@ Date: April 2026
 
 Description:
     Loops over all MC ROOT files in EOS directories (DY, ST, TT, VV, WJ),
-    loads MC and data pileup histograms, then adds 4 new weight branches
-    for different data pileup scenarios (80p0, 72p3832, 69p2, 66p0168).
-    
+    loads MC and data pileup histograms, then adds pileup weight branches
+    for several data targets:
+      - 2025: nominal + xsec variations (puweight_2025_<xsec>_v2)
+      - 2026: nominal                   (puweight_2026_69p2)
+      - combined 2025+2026: nominal     (puweight_2025_2026_69p2)
+    The MC denominator (MC_PileUp_2025.root) is shared across all targets, since
+    the same MC files are reweighted; only the data profile (numerator) changes.
+
     For each event, computes weight = data_bin_content / mc_bin_content
     using the npu_true variable. Handles empty bins by setting weight = 1.0.
-    
+
+    Branch-adding is idempotent per branch: only missing branches are added, so
+    re-running tops up whatever is absent and preserves existing branches.
+
     Files are modified in-place on EOS.
 """
 
@@ -39,10 +47,14 @@ PILEUP_DATA_DIR = "/afs/cern.ch/user/h/haawedik/CMSSW_14_1_0_pre4/src/TauFW/Pico
 # MC and data pileup histogram files
 MC_PILEUP_FILE = os.path.join(PILEUP_DATA_DIR, "MC_PileUp_2025.root")
 DATA_PILEUP_FILES = OrderedDict([
-    ('80p0',      os.path.join(PILEUP_DATA_DIR, "Data_PileUp_2025_80p0.root")),
-    ('72p3832',   os.path.join(PILEUP_DATA_DIR, "Data_PileUp_2025_72p3832.root")),
-    ('69p2',      os.path.join(PILEUP_DATA_DIR, "Data_PileUp_2025_69p2.root")),
-    ('66p0168',   os.path.join(PILEUP_DATA_DIR, "Data_PileUp_2025_66p0168.root")),
+    # 2025 (nominal + xsec variations) — already written to the EOS files by earlier runs
+    ('2025_80p0',      os.path.join(PILEUP_DATA_DIR, "Data_PileUp_2025_80p0.root")),
+    ('2025_72p3832',   os.path.join(PILEUP_DATA_DIR, "Data_PileUp_2025_72p3832.root")),
+    ('2025_69p2',      os.path.join(PILEUP_DATA_DIR, "Data_PileUp_2025_69p2.root")),
+    ('2025_66p0168',   os.path.join(PILEUP_DATA_DIR, "Data_PileUp_2025_66p0168.root")),
+    # 2026 nominal and combined 2025+2026 nominal (same MC denominator, only data profile differs)
+    ('2026_69p2',      os.path.join(PILEUP_DATA_DIR, "Data_PileUp_2026_69p2.root")),
+    ('2025_2026_69p2', os.path.join(PILEUP_DATA_DIR, "Data_PileUp_2025_2026_69p2.root")),
 ])
 
 # Histogram names inside ROOT files
@@ -57,15 +69,17 @@ WEIGHT_DTYPE = 'f'  # ROOT float type for branches
 
 # Output weight branch names
 WEIGHT_BRANCHES = OrderedDict([
-    ('80p0',      'puweight_2025_80p0_v2'),
-    ('72p3832',   'puweight_2025_72p3832_v2'),
-    ('69p2',      'puweight_2025_69p2_v2'),
-    ('66p0168',   'puweight_2025_66p0168_v2'),
+    ('2025_80p0',      'puweight_2025_80p0_v2'),
+    ('2025_72p3832',   'puweight_2025_72p3832_v2'),
+    ('2025_69p2',      'puweight_2025_69p2_v2'),
+    ('2025_66p0168',   'puweight_2025_66p0168_v2'),
+    ('2026_69p2',      'puweight_2026_69p2'),          # NEW: reweight MC to 2026 data (nominal)
+    ('2025_2026_69p2', 'puweight_2025_2026_69p2'),    # NEW: reweight MC to combined 2025+2026 data (nominal)
 ])
 
 # Options
 VERBOSE = True
-DRY_RUN = False
+DRY_RUN = False 
 MAX_FILES = None  # Set to integer to limit number of files processed (for testing)
 MAX_ERRORS = 1000   # Stop after this many file errors
 
@@ -311,23 +325,19 @@ def process_file(filepath, histograms):
         input_file.Close()
         return False, 0, f"Branch '{NPU_BRANCH_NAME}' not found"
     
-    # Check if ALL weight branches already exist (file already processed)
-    existing_branches = [branch for branch in WEIGHT_BRANCHES.values() 
-                         if check_branch_exists(tree, branch)]
-    if len(existing_branches) == len(WEIGHT_BRANCHES):
+    # Per-branch idempotency: add only the weight branches that are missing, so branches
+    # written by earlier runs (e.g. the 2025 set) are preserved and re-runs are safe.
+    branches_to_add = OrderedDict((key, name) for key, name in WEIGHT_BRANCHES.items()
+                                  if not check_branch_exists(tree, name))
+    if not branches_to_add:
         input_file.Close()
         return False, num_events, "Already processed (all weight branches exist)"
-    
-    # Check if SOME weight branches exist (partial processing - this is an error)
-    if len(existing_branches) > 0:
-        input_file.Close()
-        return False, num_events, f"Partial processing detected ({len(existing_branches)}/{len(WEIGHT_BRANCHES)} branches exist) - skipping"
-    
+
     if VERBOSE:
         print(f"    Events: {num_events}")
 
     if DRY_RUN:
-        print(f"    DRY-RUN: Would add {len(WEIGHT_BRANCHES)} weight branches")
+        print(f"    DRY-RUN: Would add {len(branches_to_add)} weight branches: {', '.join(branches_to_add.values())}")
         input_file.Close()
         return True, num_events, "Dry-run (no changes made)"
 
@@ -343,16 +353,16 @@ def process_file(filepath, histograms):
         update_file.Close()
         return False, 0, f"Tree '{TREE_NAME}' not found on re-open"
 
-    # Create new branches on the existing tree
+    # Create only the missing branches on the existing tree
     weight_arrays = {}
     new_branches = []
-    for scenario, branch_name in WEIGHT_BRANCHES.items():
+    for scenario, branch_name in branches_to_add.items():
         weight_arrays[scenario] = array.array('f', [0.0])
         br = tree.Branch(branch_name, weight_arrays[scenario], f"{branch_name}/{WEIGHT_DTYPE}")
         new_branches.append(br)
 
     if VERBOSE:
-        print(f"    Created {len(WEIGHT_BRANCHES)} weight branches")
+        print(f"    Created {len(branches_to_add)} weight branches: {', '.join(branches_to_add.values())}")
 
     mc_hist = histograms['mc_hist']
     data_hists = histograms['data_hists']
@@ -363,7 +373,7 @@ def process_file(filepath, histograms):
         tree.GetEntry(i)
         npu_true = tree.npu_true
 
-        for scenario in WEIGHT_BRANCHES:
+        for scenario in branches_to_add:
             weight = get_pileup_weight(npu_true, data_hists[scenario], mc_hist)
             weight_arrays[scenario][0] = weight
 

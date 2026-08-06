@@ -30,12 +30,12 @@ def getsampleset(channel,era,**kwargs):
     join += ['TT','ST']
   
   # SM BACKGROUND MC SAMPLES
-  if '2022_preEE' in era or '2022_postEE' in era or '2023'in era or '2024' in era or '2025' in era: # so far same samples and cross sections are used for preEE and postEE, if event numbers are set elsewhere then we don't need to add seperate numbers for both eras
+  if '2022_preEE' in era or '2022_postEE' in era or '2023'in era or '2024' in era or '2025' in era or '2026' in era or '2526' in era: # so far same samples and cross sections are used for preEE and postEE, if event numbers are set elsewhere then we don't need to add seperate numbers for both eras. '2026'=2026-only, '2526'=combined 2025+2026.
     # for now nevts is set to 1 so it isn't taken into account in the scaling of the samples as this will be done elsewhere
     
     kfactor_dy=6282.6/5455.0 # LO->NNLO+NLO_EW k-factor computed for 13.6 TeV [https://twiki.cern.ch/twiki/bin/viewauth/CMS/MATRIXCrossSectionsat13p6TeV]
     kfactor_dy_powheg = 6282.6/6731.99  # LO->NNLO+NLO_EW k-factor computed for 13.6 TeV [https://twiki.cern.ch/twiki/bin/viewauth/CMS/MATRIXCrossSectionsat13p6TeV]
-    kfactor_wj= 0.93 if '2024' in era or '2025' in era else 63425.1/55300 # LO->NNLO+NLO_EW k-factor computed for 13.6 TeV
+    kfactor_wj= 0.93 if '2024' in era or '2025' in era or '2026' in era or '2526' in era else 63425.1/55300 # LO->NNLO+NLO_EW k-factor computed for 13.6 TeV
     kfactor_ttbar=923.6/762.1 # NLO->NNLO k-factor computed for 13.6 TeV
     kfactor_ww=1.524 # LO->NNLO+NLO_EW computed for 13.6 TeV
     kfactor_zz=1.524 # LO->NNLO+NLO_EW computed for 13.6 TeV
@@ -44,7 +44,7 @@ def getsampleset(channel,era,**kwargs):
 
     cme=13.6
 
-    if '2024' in era or '2025' in era:
+    if '2024' in era or '2025' in era or '2026' in era or '2526' in era: # '2026'=2026-only, '2526'=combined 2025+2026
       expsamples = [ # table of MC samples to be converted to Sample objects
         # GROUP NAME                     TITLE                 XSEC      EXTRA OPTIONS
         # ( 'DY', "DYto2Tau-2Jets_Bin-MLL-50",       "Drell-Yan 50",        1818.3*kfactor_dy, {'extraweight': dyweight }), # LO times kfactor, commenting this one out as it is the same as the one below but in principle it should be possible to conbine this sample with the inclusive one below 
@@ -227,13 +227,19 @@ def getsampleset(channel,era,**kwargs):
       #dataset = "SingleMuon_Run%d?"%year # need this one as well for C
       # TODO: need to somehow handle that we need SingleMuonC, MuonC, and MuonD for preEE
     elif era=='2022_postEE': dataset = "Muon_Run%d?"%year
-    elif '2023' in era or '2024' in era or '2025' in era: dataset = "Muon*"
+    elif '2526' in era: dataset = "Muon*"          # combined 2025+2026 (all runs in merged Data dir)
+    elif '2026' in era: dataset = "Muon*Run2026*"  # 2026-only
+    elif '2025' in era: dataset = "Muon*Run2025*"  # 2025-only (Data dir now also holds 2026 symlinks)
+    elif '2023' in era or '2024' in era: dataset = "Muon*"
     else: dataset = "SingleMuon_Run%d?"%year
     
   elif 'etau' in channel or 'ee' in channel: 
     if (year==2018 or year==2022):
       dataset = "EGamma_Run%d?"%year
-    elif '2023' in era or '2024' in era or '2025' in era: dataset = "EGamma*"
+    elif '2526' in era: dataset = "EGamma*"          # combined 2025+2026 (no 2026 EGamma data yet)
+    elif '2026' in era: dataset = "EGamma*Run2026*"  # 2026-only (no 2026 EGamma data yet)
+    elif '2025' in era: dataset = "EGamma*Run2025*"  # 2025-only
+    elif '2023' in era or '2024' in era: dataset = "EGamma*"
     else: "SingleElectron_Run%d?"%year
 
   elif 'emu'    in channel: dataset = "SingleMuon_Run%d?"%year
@@ -248,18 +254,27 @@ def getsampleset(channel,era,**kwargs):
     expsamples = [s for s in expsamples if not any(v in s[0] for v in vetoes)]
   
   # SAMPLE SET
+  # era-dependent data pileup weight: MC denominator is shared (same MC files reweighted),
+  # only the data profile (numerator) differs per era. Muon/trig SFs are always the 2025 ones
+  # (no 2026/2526 variants exist). era labels: '2025'=2025-only, '2026'=2026-only, '2526'=combined.
+  if   '2526' in era: puw = 'puweight_2025_2026_69p2' # combined 2025+2026 profile
+  elif '2026' in era: puw = 'puweight_2026_69p2'      # 2026-only profile
+  elif '2025' in era: puw = 'puweight_2025_69p2_v3'   # 2025-only profile
+  else:               puw = 'puweight'                # generic (older eras)
   if weight=="":
     weight = ""
   #elif channel in ['mutau','etau']:
   if 'mutau' in channel or 'etau' in channel:
     weight = "genweight*puweight*trigweight*idisoweight_1*idweight_2*ltfweight_2"
-    if "2025" in era:
-      weight = "genweight*puweight_2025_69p2_v3*trigweight_2025*idisoweight_1_2025*idweight_2*ltfweight_2"   
+    if '2025' in era or '2026' in era or '2526' in era: # 2025 / 2026 / combined: 2025 muon SFs
+      weight = "genweight*%s*trigweight_2025*idisoweight_1_2025*idweight_2*ltfweight_2"%(puw)
     #weight = "genweight*puweight_2025_69p2_v3*trigweight_2025*idisoweight_1_2025" #puweight_2025_69p2*trigweight*idweight_1*idweight_2*ltfweight_1*ltfweight_2"
   elif channel in ['tautau','ditau']:
     weight = "genweight*trigweight*puweight*idweight_1*idweight_2*ltfweight_1*ltfweight_2"
   else: # mumu, emu, ...
     weight = "genweight*puweight_2025_69p2_v3*idisoweight_1_2025*trigweight_2025*idisoweight_2_2025"
+    if '2026' in era or '2526' in era: # 2026 / combined: swap in era pileup weight, keep 2025 muon SFs
+      weight = "genweight*%s*idisoweight_1_2025*trigweight_2025*idisoweight_2_2025"%(puw)
   
   
   for sf in rmsfs: # remove (old) SFs, e.g. for SF measurement
@@ -290,7 +305,7 @@ def getsampleset(channel,era,**kwargs):
   #     sampleset.stitch("DYto2L-4Jets_MLL-50*", incl='DYto2L-4Jets_MLL-50_ext1', name="DY_M50", cme=cme) # Drell-Yan, M > 50 GeV
   # JOIN
   sampleset.join('DY', name='DY' ) # Drell-Yan, M < 50 GeV + M > 50 GeV
-  if '2024' in era or '2025' in era:
+  if '2024' in era or '2025' in era or '2026' in era or '2526' in era:
     sampleset.join('Wto*Nu-2Jets', name='WJ' ) # W + jets (NLO), merge different decay modes samples
   if 'VV' in join:
     sampleset.join('VV','WZ','WW','ZZ', name='VV' ) # Diboson
