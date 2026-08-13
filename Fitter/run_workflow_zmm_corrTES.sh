@@ -3,7 +3,7 @@
 # Sibling of run_workflow_zmm.sh (uncorrelated TES). Uses parallel _corrTES scripts and
 # a separate output/plot tree so the two fits can be compared side-by-side.
 
-J_VALUES=("VVTight") 
+J_VALUES=("VTight")  # the WHAM cut is idPNetVSjet_2>=7 = VTight (raw 0.9494)
 E_VALUES=( "Tight" "VVLoose" )  # WHAM VSe scenarios (eVVLoose / eTight)
 
 YEAR="2024"
@@ -32,6 +32,15 @@ for JET_WP in "${J_VALUES[@]}"; do
       --input_file ${BASE_INPUT}/ztt_mt_tes_m_vis.inputs-$YEAR-13TeV_mutau.root \
       -o 3 --mumu_datacard_file ${BASE_OUTPUT}/$YEAR/ztt_mm_m_vis-baseline_mumu-$YEAR-13TeV.txt \
       2>&1 | tee step1_multidimfit_corrTES_${JET_WP}_${ELE_WP}.log
+
+    echo "=== Step 1b: Interpolate 1sigma scan errors ==="
+    # Replace the grid-quantized 1sigma bounds in FitparameterValues_*.txt with
+    # the interpolated deltaNLL=0.5 crossings, i.e. -2dlnL=1 (nominals
+    # untouched; .bak_gridsigma kept).
+    # Everything downstream (plot_measurements, createroot_TES -> correction
+    # JSONs) reads these txt bounds, so this must run before steps 3/4.
+    python3 interpolate_scan_errors.py -y $YEAR -j ${JET_WP} -e ${ELE_WP} -o ${OUTPUT_ROOT} \
+      2>&1 | tee step1b_interpolate_errors_${JET_WP}_${ELE_WP}.log
 
     echo "=== Step 2: FitDiagnostics + PostFit (corrTES, per-DM) ==="
     python3 TauES_ID/makecombinedfitTES_SF_postfit_corrTES.py -y $YEAR -c $CONFIG_TT \

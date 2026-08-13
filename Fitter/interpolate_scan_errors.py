@@ -14,7 +14,7 @@ untouched). Original txt kept as <file>.bak_gridsigma (created once, never
 overwritten); reruns are deterministic from the same scans.
 
 Run (any env with uproot+numpy, e.g. LCG), after workflow step 1:
-  python3 interpolate_scan_errors.py [-y 2024] [-j VVTight] [-e Tight VVLoose]
+  python3 interpolate_scan_errors.py [-y 2024] [-j VTight] [-e Tight VVLoose]
 """
 import argparse
 import glob
@@ -156,7 +156,7 @@ def rewrite_txt(path, new):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("-y", "--year", default="2024")
-    ap.add_argument("-j", "--jet-wp", default="VVTight")
+    ap.add_argument("-j", "--jet-wp", default="VTight")
     ap.add_argument("-e", "--ele-wps", nargs="+", default=["Tight", "VVLoose"])
     ap.add_argument("-o", "--output-root", default="output_pt_less_region_corrTES")
     args = ap.parse_args()

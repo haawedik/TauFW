@@ -16,7 +16,7 @@ POI values come from the step-1 MultiDimFit grid-scan param file
 --poi-source fitdiag switches to the FitDiagnostics fit_s values instead.
 
 Needs cmsenv (PostFitShapesFromWorkspace). Run from Fitter/ AFTER step 2:
-    python3 make_poionly_postfit.py -j VVTight -e Tight -y 2024
+    python3 make_poionly_postfit.py -j VTight -e Tight -y 2024
 """
 import os
 import re
@@ -77,7 +77,7 @@ def copy_dir(src_dir, fout, out_name):
 
 def main():
     ap = argparse.ArgumentParser(description="POI-only postfit shapes (corrTES)")
-    ap.add_argument('-j', '--jet', dest='jet_wp', default='VVTight')
+    ap.add_argument('-j', '--jet', dest='jet_wp', default='VTight')
     ap.add_argument('-e', '--electron', dest='ele_wp', default='Tight')
     ap.add_argument('-y', '--year', dest='year', default='2024')
     ap.add_argument('--dms', default=None, help="comma-separated DM filter (default: all found)")

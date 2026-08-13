@@ -5,7 +5,7 @@
 ## INPUTS ARE NOT CREATED FROM PICOS: they come from the WHAM plotter
 ## (`wham export Configurations/tau_sf/<S>/taufw_export.yaml` in
 ## /eos/home-h/haawedik/WHAM-plot), which writes
-##   input_pt_less_region/againstjet_VVTight/againstelectron_{VVLoose,Tight}/
+##   input_pt_less_region/againstjet_VTight/againstelectron_{VVLoose,Tight}/
 ##       ztt_mt_tes_m_vis.inputs-2024-13TeV_mutau.root   (+ the mm companion)
 ## The tagger/baselineCuts/samples blocks are kept for provenance only —
 ## createinputsTES.py is NOT part of this workflow.
@@ -20,10 +20,10 @@
 ## Run (from Fitter/):
 ##   python3 TauES_ID/harvestDatacards_TES_idSF_MCStat_corrTES.py -y 2024 \
 ##     -c TauES_ID/config/config_wham_PNet.yml \
-##     -i input_pt_less_region/againstjet_VVTight/againstelectron_VVLoose
+##     -i input_pt_less_region/againstjet_VTight/againstelectron_VVLoose
 ##   python3 TauES_ID/harvestDatacards_zmm.py -y 2024 \
 ##     -c TauES/config/FitSetup_mumu_wham.yml -e "" \
-##     -i input_pt_less_region/againstjet_VVTight/againstelectron_VVLoose -o <outdir>
+##     -i input_pt_less_region/againstjet_VTight/againstelectron_VVLoose -o <outdir>
 ## then makecombinedfitTES_SF_corrTES.py with -c this file and
 ## -cmm TauES/config/FitSetup_mumu_wham.yml.
 

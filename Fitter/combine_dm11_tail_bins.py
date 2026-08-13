@@ -8,7 +8,7 @@ holds the untouched 11-bin version. All other TDirectories are copied
 unchanged; values AND Sumw2 variances are summed in the merged bin.
 
 Run (any env with uproot+hist, e.g. LCG):
-  python3 combine_dm11_tail_bins.py [-y 2024] [-j VVTight] [-e Tight VVLoose]
+  python3 combine_dm11_tail_bins.py [-y 2024] [-j VTight] [-e Tight VVLoose]
 """
 import argparse
 import os
@@ -69,7 +69,7 @@ def process_file(path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("-y", "--year", default="2024")
-    ap.add_argument("-j", "--jet-wp", default="VVTight")
+    ap.add_argument("-j", "--jet-wp", default="VTight")
     ap.add_argument("-e", "--ele-wps", nargs="+", default=["Tight", "VVLoose"])
     ap.add_argument("-i", "--input-root", default="input_pt_less_region")
     args = ap.parse_args()

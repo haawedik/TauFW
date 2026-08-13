@@ -3,7 +3,7 @@
 ## TauES_ID/config/config_wham_PNet.yml).
 ##
 ## INPUT IS NOT CREATED FROM PICOS: it is
-##   input_pt_less_region/againstjet_VVTight/againstelectron_{VVLoose,Tight}/
+##   input_pt_less_region/againstjet_VTight/againstelectron_{VVLoose,Tight}/
 ##       ztt_mm_tes_m_vis.inputs-2024-13TeV_mumu.root
 ## from the WHAM plotter (`wham export`, /eos/home-h/haawedik/WHAM-plot). One
 ## counting bin `baseline` over m_mumu in [70,110] (edges differ from the old
@@ -14,7 +14,7 @@
 ## Run (from Fitter/):
 ##   python3 TauES_ID/harvestDatacards_zmm.py -y 2024 \
 ##     -c TauES/config/FitSetup_mumu_wham.yml -e "" \
-##     -i input_pt_less_region/againstjet_VVTight/againstelectron_VVLoose -o <outdir>
+##     -i input_pt_less_region/againstjet_VTight/againstelectron_VVLoose -o <outdir>
 
 channel: mumu
 

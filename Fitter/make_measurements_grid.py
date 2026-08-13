@@ -3,7 +3,7 @@
 
 Rows (VSjet WPs) and columns (VSele WPs) are discovered from the
 VSjet<X>_VSele<Y> subdirectories present in --dir, so the grid follows
-whatever WP combos the workflow actually ran (e.g. only VVTight x
+whatever WP combos the workflow actually ran (e.g. only VTight x
 {VVLoose,Tight} in the WHAM PNet setup)."""
 import os
 import re
