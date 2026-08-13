@@ -37,13 +37,13 @@ def extract_genmatch_data(data_node):
         return None
 
 
-def create_combined_correction(input_dir, output_filename, correction_type="tes", variant="uncorr", label=""):
+def create_combined_correction(input_dir, output_filename, correction_type="tes", variant="uncorr", label="", year="2024"):
     """Create a single correction with variation parameter from individual JSON files."""
 
     print(f"Creating {correction_type.upper()} correction file (variant={variant})...")
 
     # Create the correction
-    combined_corr = create_single_correction(input_dir, correction_type, variant=variant, label=label)
+    combined_corr = create_single_correction(input_dir, correction_type, variant=variant, label=label, year=year)
     
     if not combined_corr:
         print(f"ERROR: Could not create {correction_type.upper()} correction!")
@@ -126,18 +126,18 @@ def test_correction(filename, combined_corr):
         traceback.print_exc()
 
 
-def create_combined_both_corrections(input_dir, output_filename, variant="uncorr", label=""):
+def create_combined_both_corrections(input_dir, output_filename, variant="uncorr", label="", year="2024"):
     """Create a single file with both TES and TauIdSF corrections."""
 
     print(f"Creating combined file with both TES and TauIdSF corrections (variant={variant})...")
 
     # Create TES correction
     print("\n=== Creating TES correction ===")
-    tes_corr = create_single_correction(input_dir, "tes", variant=variant, label=label)
+    tes_corr = create_single_correction(input_dir, "tes", variant=variant, label=label, year=year)
 
     # Create TauIdSF correction
     print("\n=== Creating TauIdSF correction ===")
-    id_corr = create_single_correction(input_dir, "id", variant=variant, label=label)
+    id_corr = create_single_correction(input_dir, "id", variant=variant, label=label, year=year)
     
     corrections_list = []
     if tes_corr:
@@ -169,18 +169,18 @@ def create_combined_both_corrections(input_dir, output_filename, variant="uncorr
         test_correction(output_filename, corr)
 
 
-def create_single_correction(input_dir, correction_type, variant="uncorr", label=""):
+def create_single_correction(input_dir, correction_type, variant="uncorr", label="", year="2024"):
     """Helper function to create a single correction with all WP combinations merged."""
 
     # Settings based on type
     variant_suffix = {'corr': '_corrTES', 'fullcorr': '_fullcorr'}.get(variant, '')
     if correction_type == "tes":
         pattern_base = "TauES"
-        final_name = "TauES_2024" + variant_suffix
+        final_name = f"TauES_{year}" + variant_suffix
         description = f"Tau Energy Scale corrections with all WP combinations ({variant} variant)"
     else:
         pattern_base = "TauID"
-        final_name = "TauIdSF_2024" + variant_suffix
+        final_name = f"TauIdSF_{year}" + variant_suffix
         description = f"Tau ID Scale Factor corrections with all WP combinations ({variant} variant)"
 
     # Regex to find files and extract WPs from filename
@@ -202,6 +202,10 @@ def create_single_correction(input_dir, correction_type, variant="uncorr", label
     # (e.g. label="ParticleNet" -> "..._ParticleNet_..."; "" keeps all = DeepTau default).
     if label:
         all_files = [f for f in all_files if f"_{label}_" in os.path.basename(f)]
+    # Year filter: tau_sf/ is shared across eras; per-WP files are named
+    # "..._{tagger}_{year}{variant}_VSjet*_VSele*.json", so "_{year}_" uniquely
+    # selects this era and prevents silently mixing e.g. 2024 and 2526 files.
+    all_files = [f for f in all_files if f"_{year}_" in os.path.basename(f)]
     all_files.sort()
     
     if not all_files:
@@ -356,6 +360,8 @@ Examples:
                         help="fit config with a 'tagger' block; filters shared tau_sf/ inputs to that tagger (PNet/UParT). DeepTau if omitted.")
     parser.add_argument('--label', dest='label', type=str, default=None,
                         help="explicit tagger label filter (e.g. ParticleNet); overrides --config")
+    parser.add_argument('-y', '--year', dest='year', type=str, default='2024',
+                        help="era/year: names the merged corrections (TauES_<year>) and filters the shared tau_sf/ inputs to this era")
 
     args = parser.parse_args()
 
@@ -383,11 +389,11 @@ Examples:
     
     # Create corrections based on type
     if args.correction_type == "tes":
-        create_combined_correction(args.input_dir, args.output_file, "tes", variant=args.variant, label=label)
+        create_combined_correction(args.input_dir, args.output_file, "tes", variant=args.variant, label=label, year=args.year)
     elif args.correction_type == "id":
-        create_combined_correction(args.input_dir, args.output_file, "id", variant=args.variant, label=label)
+        create_combined_correction(args.input_dir, args.output_file, "id", variant=args.variant, label=label, year=args.year)
     else:  # both - create single file with both corrections
-        create_combined_both_corrections(args.input_dir, args.output_file, variant=args.variant, label=label)
+        create_combined_both_corrections(args.input_dir, args.output_file, variant=args.variant, label=label, year=args.year)
 
 
 if __name__ == '__main__':

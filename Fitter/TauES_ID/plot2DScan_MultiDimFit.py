@@ -969,7 +969,7 @@ def plot_measurement_summary(region_labels, measurements, **kwargs):
     year_latex.SetTextFont(42)
     year_latex.SetTextAlign(31)
     year_latex.SetNDC(True)
-    year_latex.DrawLatex(1.0 - right_margin, 1.0 - top_margin + 0.01, f"{year}, 109 fb^{{-1}} (13.6 TeV)")
+    year_latex.DrawLatex(1.0 - right_margin, 1.0 - top_margin + 0.01, f"{year}, {CMSStyle.lumi_dict.get(year, 109):.0f} fb^{{-1}} ({CMSStyle.cme_dict.get(year, 13.6):.1f} TeV)")
     
     # Add title
     if title:
@@ -1125,7 +1125,7 @@ def plot_scan_correlations(scan_results_all_regions, **kwargs):
     year_latex.SetTextFont(42)
     year_latex.SetTextAlign(31)
     year_latex.SetNDC(True)
-    year_latex.DrawLatex(1.0 - right_margin, 1.0 - top_margin + 0.01, f"{year}, 109 fb^{{-1}} (13.6 TeV)")
+    year_latex.DrawLatex(1.0 - right_margin, 1.0 - top_margin + 0.01, f"{year}, {CMSStyle.lumi_dict.get(year, 109):.0f} fb^{{-1}} ({CMSStyle.cme_dict.get(year, 13.6):.1f} TeV)")
     
     # Add title
     title_latex = ROOT.TLatex()
@@ -1304,7 +1304,7 @@ if __name__ == '__main__':
     parser.add_argument('-y', '--year', dest='year', 
                        choices=['2024', '2016', '2017', '2018', 'UL2016_preVFP', 
                                'UL2016_postVFP', 'UL2017', 'UL2018', 'UL2018_v10',
-                               '2022_postEE', '2022_preEE', '2023C', '2023D', '2025'], 
+                               '2022_postEE', '2022_preEE', '2023C', '2023D', '2025', '2026', '2526'],
                        type=str, default='2024', action='store', 
                        help="select year")
     

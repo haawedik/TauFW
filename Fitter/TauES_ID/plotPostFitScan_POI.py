@@ -716,7 +716,7 @@ if __name__ == '__main__':
     argv = sys.argv
     description = '''This script makes datacards with CombineHarvester.'''
     parser = ArgumentParser(prog="LowMassDiTau_Harvester",description=description,epilog="Succes!")
-    parser.add_argument('-y', '--year', dest='year', choices=['2024','2016','2017','2018','UL2016_preVFP','UL2016_postVFP','UL2017','UL2018', 'UL2018_v10','2022_postEE','2022_preEE', '2023C', '2023D'], type=str, default='2017', action='store', help="select year")
+    parser.add_argument('-y', '--year', dest='year', choices=['2024','2016','2017','2018','UL2016_preVFP','UL2016_postVFP','UL2017','UL2018', 'UL2018_v10','2022_postEE','2022_preEE', '2023C', '2023D', '2025', '2026', '2526'], type=str, default='2017', action='store', help="select year")
     parser.add_argument('-c', '--config', dest='config', type=str, default='TauES/config/defaultFitSetupTES_mutau.yml', action='store', help="set config file containing sample & fit setup" )
     parser.add_argument('-e', '--extra-tag', dest='extratag', type=str, default="", action='store', metavar="TAG", help="extra tag for output files")
     parser.add_argument('-r', '--shift-range', dest='shiftRange', type=str, default="0.940,1.060", action='store', metavar="RANGE", help="range of TES shifts")

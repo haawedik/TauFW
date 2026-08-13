@@ -12,6 +12,17 @@ from ROOT import TCanvas, TGraph, TGraphAsymmErrors, TLatex, TLegend, TLine, kBl
 
 TREE_TAG = ""  # tagger suffix for the output/postfit trees (e.g. "_pnet"); set from --tagger, "" = DeepTau
 
+from TauFW.Plotter.plot import CMSStyle
+
+def lumi_label(year):
+    """Lumi + CoM label for the measurement plots, derived from CMSStyle
+    (e.g. year='2526' -> '135 fb^{-1} (13.6 TeV)', '2526' lumi=135.48). Falls back to
+    the historical 2024 label for eras missing from CMSStyle so a plot never crashes."""
+    try:
+        return "%.0f fb^{-1} (%.1f TeV)" % (CMSStyle.lumi_dict[year], CMSStyle.cme_dict.get(year, 13.6))
+    except (KeyError, TypeError):
+        return "109 fb^{-1} (13.6 TeV)"
+
 def load_measurements_corr(ele_wp, jet_wp, year):
     """corrTES loader: one param/fitdiag file per DM contains 4 POIs (1 TES + 3 TauID);
        expand each into 3 measurement records (one per pT bin) sharing the TES value."""
@@ -439,7 +450,7 @@ def load_measurements(ele_wp="tight", jet_wp="medium", year="2024", variant="unc
     print(f"\nLoaded {len(measurements)} total measurements")
     return measurements
 
-def create_correlation_plot(measurements, jet_wp, ele_wp):
+def create_correlation_plot(measurements, jet_wp, ele_wp, year):
     """Create correlation plot (Only for MultiDimFit)"""
     print("\nCreating correlation plot...")
     
@@ -491,14 +502,14 @@ def create_correlation_plot(measurements, jet_wp, ele_wp):
     # Add CMS label
     cms_label = TLatex(); cms_label.SetNDC(); cms_label.SetTextFont(61); cms_label.SetTextSize(0.05); cms_label.DrawLatex(0.46, 0.92, "CMS")
     cms_internal = TLatex(); cms_internal.SetNDC(); cms_internal.SetTextFont(52); cms_internal.SetTextSize(0.04); cms_internal.DrawLatex(0.55, 0.92, "Internal")
-    lumi_text = TLatex(); lumi_text.SetNDC(); lumi_text.SetTextFont(42); lumi_text.SetTextSize(0.035); lumi_text.DrawLatex(0.68, 0.92, "109 fb^{-1} (13.6 TeV)")
+    lumi_text = TLatex(); lumi_text.SetNDC(); lumi_text.SetTextFont(42); lumi_text.SetTextSize(0.035); lumi_text.DrawLatex(0.68, 0.92, lumi_label(year))
     
     c1.SaveAs(f"Measurements/VSjet{jet_wp}_VSele{ele_wp}/correlation_plot.png")
     c1.SaveAs(f"Measurements/VSjet{jet_wp}_VSele{ele_wp}/correlation_plot.pdf")
     c1.SaveAs(f"Measurements/VSjet{jet_wp}_VSele{ele_wp}/correlation_plot.root")
     return c1
 
-def create_tes_plot(measurements, jet_wp, ele_wp):
+def create_tes_plot(measurements, jet_wp, ele_wp, year):
     """Create TES measurements plot"""
     print("\nCreating TES plot...")
     
@@ -582,14 +593,14 @@ def create_tes_plot(measurements, jet_wp, ele_wp):
     # Add CMS label
     cms_label = TLatex(); cms_label.SetNDC(); cms_label.SetTextFont(61); cms_label.SetTextSize(0.05); cms_label.DrawLatex(0.26, 0.92, "CMS")
     cms_internal = TLatex(); cms_internal.SetNDC(); cms_internal.SetTextFont(52); cms_internal.SetTextSize(0.04); cms_internal.DrawLatex(0.35, 0.92, "Internal")
-    lumi_text = TLatex(); lumi_text.SetNDC(); lumi_text.SetTextFont(42); lumi_text.SetTextSize(0.035); lumi_text.DrawLatex(0.65, 0.92, "109 fb^{-1} (13.6 TeV)")
+    lumi_text = TLatex(); lumi_text.SetNDC(); lumi_text.SetTextFont(42); lumi_text.SetTextSize(0.035); lumi_text.DrawLatex(0.65, 0.92, lumi_label(year))
 
     c2.SaveAs(f"Measurements/VSjet{jet_wp}_VSele{ele_wp}/tes_measurements.png")
     c2.SaveAs(f"Measurements/VSjet{jet_wp}_VSele{ele_wp}/tes_measurements.pdf")
     c2.SaveAs(f"Measurements/VSjet{jet_wp}_VSele{ele_wp}/tes_measurements.root")
     return c2
 
-def create_tauID_plot(measurements, jet_wp, ele_wp):
+def create_tauID_plot(measurements, jet_wp, ele_wp, year):
     """Create TauID measurements plot"""
     print("\nCreating TauID plot...")
     
@@ -669,7 +680,7 @@ def create_tauID_plot(measurements, jet_wp, ele_wp):
     # Add CMS label
     cms_label = TLatex(); cms_label.SetNDC(); cms_label.SetTextFont(61); cms_label.SetTextSize(0.05); cms_label.DrawLatex(0.26, 0.92, "CMS")
     cms_internal = TLatex(); cms_internal.SetNDC(); cms_internal.SetTextFont(52); cms_internal.SetTextSize(0.04); cms_internal.DrawLatex(0.35, 0.92, "Internal")
-    lumi_text = TLatex(); lumi_text.SetNDC(); lumi_text.SetTextFont(42); lumi_text.SetTextSize(0.035); lumi_text.DrawLatex(0.65, 0.92, "109 fb^{-1} (13.6 TeV)")
+    lumi_text = TLatex(); lumi_text.SetNDC(); lumi_text.SetTextFont(42); lumi_text.SetTextSize(0.035); lumi_text.DrawLatex(0.65, 0.92, lumi_label(year))
 
     c3.SaveAs(f"Measurements/VSjet{jet_wp}_VSele{ele_wp}/tauID_measurements.png")
     c3.SaveAs(f"Measurements/VSjet{jet_wp}_VSele{ele_wp}/tauID_measurements.pdf")
@@ -707,9 +718,9 @@ def main():
     print(f"\nCreating plots for {len(measurements)} measurements...")
     
     # Create the three plots
-    c1 = create_correlation_plot(measurements, jet_wp=args.jet_wp, ele_wp=args.ele_wp)
-    c2 = create_tes_plot(measurements, jet_wp=args.jet_wp, ele_wp=args.ele_wp)
-    c3 = create_tauID_plot(measurements, jet_wp=args.jet_wp, ele_wp=args.ele_wp)
+    c1 = create_correlation_plot(measurements, jet_wp=args.jet_wp, ele_wp=args.ele_wp, year=args.year)
+    c2 = create_tes_plot(measurements, jet_wp=args.jet_wp, ele_wp=args.ele_wp, year=args.year)
+    c3 = create_tauID_plot(measurements, jet_wp=args.jet_wp, ele_wp=args.ele_wp, year=args.year)
     
     print("\nAll plots created successfully!")
     print("Files saved:")

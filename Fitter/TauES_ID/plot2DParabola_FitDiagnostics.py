@@ -526,7 +526,7 @@ if __name__ == '__main__':
     parser.add_argument('-y', '--year', dest='year', 
                        choices=['2024', '2016', '2017', '2018', 'UL2016_preVFP', 
                                'UL2016_postVFP', 'UL2017', 'UL2018', 'UL2018_v10',
-                               '2022_postEE', '2022_preEE', '2023C', '2023D'], 
+                               '2022_postEE', '2022_preEE', '2023C', '2023D', '2025', '2026', '2526'],
                        type=str, default='2024', action='store', 
                        help="select year")
     

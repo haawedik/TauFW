@@ -114,15 +114,23 @@ def run_combined_fit(setup, setup_mumu, option, args, **kwargs):
         bad_keys = {"iChannel", "nll", "nll0"}
         param_opts = ",".join(f"{k}={v}" for k, v in params.items() if k not in bad_keys)
 
-        # Per-POI ranges from 1σ if available, else defaults
+        # Per-POI ranges: pad the ±1σ window so robustHesse can scan PAST ±1σ to find the
+        # ΔNLL crossing. Boxing a POI to exactly its ±1σ makes robustHesse hit the wall
+        # -> "Closed range without finding crossing". Clamp to the wide default so a POI
+        # can never leave the scan window.
         range_parts = []
         for poi in all_pois:
             e = errors.get(poi, {})
-            if 'low' in e and 'high' in e:
-                range_parts.append(f"{poi}={e['low']},{e['high']}")
+            dflt = tes_range if poi.startswith('tes_') else tid_SF_range
+            dlo, dhi = (float(x) for x in dflt.split(','))
+            if 'low' in e and 'high' in e and poi in params:
+                c    = float(params[poi])                       # best-fit centre
+                half = max(e['high'] - c, c - e['low'], 1e-4)   # 1σ half-width
+                lo   = max(c - 5*half, dlo)                      # ≥5σ headroom, clamped
+                hi   = min(c + 5*half, dhi)                      #   to the physical range
+                range_parts.append(f"{poi}={lo},{hi}")
             else:
-                default = tes_range if poi.startswith('tes_') else tid_SF_range
-                range_parts.append(f"{poi}={default}")
+                range_parts.append(f"{poi}={dflt}")
         range_opts = ":".join(range_parts)
 
         BINLABELoutput = f"mt_m_vis-{dm}{setup['tag']}{extratag}-{era}-13TeV"
@@ -208,7 +216,7 @@ if __name__ == '__main__':
     parser.add_argument('-y', '--era', dest='era',
                         choices=['2016','2017','2018','UL2016_preVFP','UL2016_postVFP',
                                  'UL2017','UL2018','UL2018_v10','2022_postEE','2022_preEE',
-                                 '2024','2025'],
+                                 '2024','2025','2026','2526'],
                         default='2025')
     parser.add_argument('-c', '--config', dest='config', type=str,
                         default='TauES_ID/config/config_coarse_TT.yml')
