@@ -26,7 +26,8 @@ def getset(channel,era,fpattern,addsf=None,rmsf=None,table=True):
   setera(era)
   rmsfs  = rmsf if rmsf else [ ]
   addsfs = addsf if addsf else [ ]
-  sampleset = getsampleset(channel,era,fname=fpattern,rmsf=rmsfs,addsf=addsfs,split=['DY'],table=table)
+  split  = ['DY'] if 'tau' in channel else [ ] # gen-match split needs a hadronic tau (mutau only)
+  sampleset = getsampleset(channel,era,fname=fpattern,rmsf=rmsfs,addsf=addsfs,split=split,table=table)
   return sampleset
 
 
@@ -34,24 +35,31 @@ def plot(sampleset,channel,era,parallel=True,tag="",outdir="plots",histdir=""):
   """Data/MC comparison in the opposite-sign signal region and the same-sign QCD control region."""
   LOG.header("plot")
 
-  # SELECTIONS: OS signal region + SS control region (QCD-enriched); mt_1<65 keeps the W tail out
-  baseline = "q_1*q_2<0 && iso_1<0.15 && idDeepTau2018v2p5VSjet_2>=5 && idDeepTau2018v2p5VSe_2>=2 && idDeepTau2018v2p5VSmu_2>=4 && mt_1<65"
-  ss       = baseline.replace("q_1*q_2<0","q_1*q_2>0")
-  selections = [
-    Sel('baseline',        baseline),
-    Sel('baseline_cr_qcd', ss),
-  ]
-
-  # VARIABLES available in the 2024 pico ntuples (extend as you like)
-  variables = [
-    Var('m_vis',        40,  0, 200),
-    Var('pt_1',  "Muon pt",   40,  0, 120),
-    Var('pt_2',  "tau_h pt",  40,  0, 120),
-    Var('eta_2', "tau_h eta", 30, -3,   3),
-    Var('mt_1',  "mt(mu,MET)",40,  0, 200),
-    Var('met',   50,  0, 150),
-    Var('decayMode_2', "tau_h decay mode", 14, 0, 14),
-  ]
+  # SELECTIONS + VARIABLES (channel-aware)
+  if channel=='mumu':
+    # Z->mumu: two isolated opposite-sign muons; no tau cuts, no data-driven QCD (negligible)
+    baseline = "q_1*q_2<0 && iso_1<0.15 && iso_2<0.15"
+    selections = [ Sel('baseline', baseline) ]
+    variables  = [ Var('m_vis', 40, 50, 130) ]  # Z peak; the xsec fit integrates this to one bin
+    qcdmethod  = None
+  else:
+    # mutau: OS signal region + SS QCD control region; mt_1<65 keeps the W tail out
+    baseline = "q_1*q_2<0 && iso_1<0.15 && idDeepTau2018v2p5VSjet_2>=5 && idDeepTau2018v2p5VSe_2>=2 && idDeepTau2018v2p5VSmu_2>=4 && mt_1<65"
+    ss       = baseline.replace("q_1*q_2<0","q_1*q_2>0")
+    selections = [
+      Sel('baseline',        baseline),
+      Sel('baseline_cr_qcd', ss),
+    ]
+    variables = [
+      Var('m_vis',        40,  0, 200),
+      Var('pt_1',  "Muon pt",   40,  0, 120),
+      Var('pt_2',  "tau_h pt",  40,  0, 120),
+      Var('eta_2', "tau_h eta", 30, -3,   3),
+      Var('mt_1',  "mt(mu,MET)",40,  0, 200),
+      Var('met',   50,  0, 150),
+      Var('decayMode_2', "tau_h decay mode", 14, 0, 14),
+    ]
+    qcdmethod  = 'QCD_OSSS'
 
   outdir   = ensuredir(repkey(outdir,CHANNEL=channel,ERA=era))
   histdir  = ensuredir(repkey(histdir,CHANNEL=channel,ERA=era,TAG=tag))
@@ -60,7 +68,7 @@ def plot(sampleset,channel,era,parallel=True,tag="",outdir="plots",histdir=""):
   for selection in selections:
     outhists.mkdir(selection.filename)
     # data-driven QCD from the same-sign region, extrapolated to opposite-sign with 'scale'
-    stacks = sampleset.getstack(variables,selection,method='QCD_OSSS',scale=1.1,parallel=parallel)
+    stacks = sampleset.getstack(variables,selection,method=qcdmethod,scale=1.1,parallel=parallel)
     fname  = "%s/$VAR_%s-%s-%s$TAG"%(outdir,channel,selection.filename,era)
     text   = "%s: %s"%(channel.replace('mu',"#mu").replace('tau',"#tau_{h}"),selection.title)
     for stack, variable in stacks.items():

@@ -1,35 +1,44 @@
-# 9. The measurement
+# 9. The measurement (Z→ττ cross-section, Z→μμ cross-check)
 
-Fit the workspace with **Combine** to extract the Z→ττ signal strength and cross-section, together with
-the τ_h ID/ES parameters.
+Fit 2 extracts the Z→ττ cross-section from the dedicated datacards of [datacards.md](datacards.md). The
+single POI is **`r`**, the signal strength on the Z signal: **σ(Z) = r × σ_theory**.
 
-## Signal strength and TauID SF
+## Z→ττ (mutau, inclusive m_vis)
 ```sh
-cd $CMSSW_BASE/src/TauFW/Fitter
-# r = ZTT normalization = sigma(Z->tautau)/sigma_theory; float it together with the TauID SF:
-combine -M MultiDimFit workspace.root --redefineSignalPOIs r,tauh_id \
-        --setParameterRanges r=0.8,1.2 -n .r_and_tauID
-# diagnostics + correlation between r and the TauID SF / TES:
-combine -M FitDiagnostics workspace.root --robustHesse 1 -n .r_vs_tauID
+cd $CMSSW_BASE/src/TauFW/Plotter/xsec_fit
+text2workspace.py datacard_mutau.txt
+# best-fit r with its uncertainty:
+combine -M MultiDimFit -P r --algo singles -n .xsec_mutau datacard_mutau.root
+# full diagnostics (pulls, correlations) + impacts:
+combine -M FitDiagnostics --robustHesse 1 -n .xsec_mutau datacard_mutau.root
+combineTool.py -M Impacts -d datacard_mutau.root -m 90 --doInitialFit --robustFit 1
+combineTool.py -M Impacts -d datacard_mutau.root -m 90 --doFits     --robustFit 1
+combineTool.py -M Impacts -d datacard_mutau.root -m 90 -o impacts_mutau.json
+plotImpacts.py -i impacts_mutau.json -o impacts_mutau
 ```
-Scans and impacts:
+Read the best-fit `r` (± stat ± syst) from the `MultiDimFit`/`FitDiagnostics` output. Then
+**σ(Z→ττ) = r × σ_theory(Z→ττ)**, using the DY σ×BR from the sample normalization.
+
+## Z→μμ (one-bin counting)
 ```sh
-combineTool.py -M Impacts -d workspace.root -m 90 --doInitialFit --robustFit 1
-combineTool.py -M Impacts -d workspace.root -m 90 --doFits --robustFit 1
-combineTool.py -M Impacts -d workspace.root -m 90 -o impacts.json && plotImpacts.py -i impacts.json -o impacts
+text2workspace.py datacard_mumu.txt
+combine -M MultiDimFit -P r --algo singles -n .xsec_mumu datacard_mumu.root
 ```
+gives `r` for the Z→μμ signal → **σ(Z→μμ) = r × σ_theory(Z→μμ)**.
 
-## Cross-section
-The Z→ττ cross-section is `r × σ_theory(Z→ττ)`. Read the best-fit `r` (and its uncertainty) from the
-fit, multiply by the theory σ×BR used in the sample normalization, and quote
-`σ(Z→ττ) = r × σ_theory` with statistical + systematic uncertainties.
-
-## Z→μμ cross-check (lepton universality)
-Measure the **Z→μμ** cross-section from the μμ n-tuples the same way (its own region / card), and
-**compare σ(Z→μμ) to σ(Z→ττ)**. Within uncertainties they should be equal (lepton universality):
-`σ(Z→ττ) / σ(Z→μμ) ≈ 1`. This is a powerful closure test of the whole chain — efficiencies, TauID/TES
-SFs, and the QCD/backgrounds.
+## Cross-check: lepton universality
+Both fits scale the **same** Z production cross-section (`σ_theory` is the same DY process), so the ratio
+is simply
+```
+σ(Z→ττ) / σ(Z→μμ)  =  r(μτ) / r(μμ)
+```
+which should be **1 within uncertainties** (lepton universality). This closes the loop: it tests your
+τ_h efficiency, the TauID/TES scale factors, and the background model all at once.
 
 > **Tasks:**
-> - Quote σ(Z→ττ) with its uncertainty breakdown (stat vs syst; dominant nuisances from the impacts).
-> - Report σ(Z→ττ)/σ(Z→μμ) and comment on the agreement.
+> - Quote σ(Z→ττ) with its uncertainty; from the impacts, name the dominant systematic.
+> - Report `r(μτ)/r(μμ)` and comment on the agreement with unity.
+
+> ⚠️ **First-run checks:** the POI is `r` (Combine's default signal strength — signal process id 0 in the
+> card), *not* `tes`/`tid_SF` (those belong to Fit 1). If `combine` complains about negative QCD bins,
+> floor them in the shapes or widen the m_vis range.
