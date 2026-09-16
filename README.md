@@ -10,7 +10,6 @@ Framework for tau analysis using NanoAOD at CMS. Three main packages are
   measurement in the &mu;&tau;<sub>h</sub> channel on **2024 (Run 3, 13.6 TeV)** data, including the
   &tau;<sub>h</sub> ID/energy-scale scale factors and a comparison of the DeepTau2018v2p5 / ParticleNet /
   UParT taggers (CMSSW\_14\_1\_0\_pre4 + Combine v10).
-- Earlier iterations: [CMSDAS 2020](docs/CMSDAS2020/main.md) (2018) and [CMSPODAS 2023](docs/CMSPODAS23/main.md).
 
 ## Installation
 
