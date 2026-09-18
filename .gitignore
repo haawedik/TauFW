@@ -21,6 +21,8 @@ PicoProducer/output
 PicoProducer/data/jsonpog
 Plotter/plots
 Plotter/tutorial/plots
+Plotter/hists
+Plotter/xsec_fit
 Fitter/*/*plots*
 Fitter/*.log
 Fitter/output*

@@ -1,0 +1,117 @@
+##############################################################################
+# CMSDAS 2026 - Tau long exercise : full command list (lxplus el9)
+# Z->tautau cross-section in mutau on 2024 (Run 3, 13.6 TeV) data,
+# + TauID/TES scale factors + 3-tagger comparison.
+# Run 'cmsenv' from CMSSW_14_1_0_pre4/src at the start of every session.
+##############################################################################
+
+
+# ==========================================================================
+# 0) SOFTWARE SETUP (once)  -- docs: sw_setup.md
+# ==========================================================================
+export SCRAM_ARCH=el9_amd64_gcc12
+cmsrel CMSSW_14_1_0_pre4
+cd CMSSW_14_1_0_pre4/src
+cmsenv
+# TauFW with the CMSDAS26 material (fork branch):
+git clone -b CMSDAS2026 https://github.com/haawedik/TauFW.git TauFW
+git clone https://github.com/cms-nanoAOD/nanoAOD-tools.git PhysicsTools/NanoAODTools
+# Combine v10 + CombineHarvester:
+git clone https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsAnalysis/CombinedLimit
+( cd HiggsAnalysis/CombinedLimit && git checkout v10.0.0 )
+git clone https://github.com/cms-analysis/CombineHarvester.git CombineHarvester
+scram b -j8
+
+# --- every new session ---
+cd CMSSW_14_1_0_pre4/src && cmsenv
+voms-proxy-init --voms cms --valid 192:00:00 --rfc
+
+
+# ==========================================================================
+# 1) CONFIGURATION  -- docs: configuration.md
+# ==========================================================================
+cd $CMSSW_BASE/src/TauFW/PicoProducer
+pico.py list
+pico.py era     2024 CMSDAS26/samples_mutau_2024.py
+pico.py channel mutau CMSDAS26.ModuleMuTau
+pico.py set     picodir /eos/cms/store/group/phys_tau/TauFW/pico2024/TES_variations/$ERA/$GROUP
+pico.py set     nfilesperjob 10
+
+
+# ==========================================================================
+# 2) FIND SAMPLES IN DAS (optional)  -- docs: das_samples.md
+# ==========================================================================
+dasgoclient --query "dataset=/Muon0/Run2024*/NANOAOD"
+dasgoclient --query "dataset=/DYto2Tau_Bin-MLL-*_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-*/NANOAODSIM"
+dasgoclient --query "summary dataset=/Muon0/Run2024F-MINIv6NANOv15-v1/NANOAOD"
+
+
+# ==========================================================================
+# 3) FLAT N-TUPLES : demo on ONE small sample  -- docs: flat_n-tuples.md
+#    (the full set is pre-made; you only run this to learn how ntuples are made)
+# ==========================================================================
+cd $CMSSW_BASE/src/TauFW/PicoProducer
+pico.py run -c mutau -y 2024 -s DYto2Tau_Bin-MLL-50to120 -m 2000
+root -l output/pico_*DYto2Tau*.root       # then: tree->Print(); tree->GetEntries(); cutflow->Draw()
+
+
+# ==========================================================================
+# 4) NORMALIZATION, QCD & CONTROL PLOTS  -- docs: norm_and_corr.md
+# ==========================================================================
+cd $CMSSW_BASE/src/TauFW/Plotter
+./plots_and_histograms_CMSDAS26.py -y 2024 -c mutau
+
+
+# ==========================================================================
+# 5) TAGGER COMPARISON (DeepTau2018v2p5 / PNet / UParT)  -- docs: tagger_comparison.md
+# ==========================================================================
+./plots_and_histograms_CMSDAS26.py -y 2024 -c mutau --tagger
+#  -> plots/2024/tagger_ROC_{VSjet,VSe,VSmu}_mutau_2024.png  (x = fake rate, log >=1e-3; y = eff, linear)
+
+
+# ==========================================================================
+# 6) TAUID + TES SCALE FACTORS  -- docs: tauid_es.md
+# ==========================================================================
+# --- Tier A : apply the measured SFs at plot level (signal region, mt_1<65), compare to nominal ---
+./plots_and_histograms_CMSDAS26.py -y 2024 -c mutau -t nominal
+./plots_and_histograms_CMSDAS26.py -y 2024 -c mutau -t idsf     --tauid-sf              # TauID SF: per DM,pt weight on genuine taus (Iteration4 JSON)
+./plots_and_histograms_CMSDAS26.py -y 2024 -c mutau -t tes      --apply-tes             # TES: rebuild ZTT from the per-DM closest _TES samples
+./plots_and_histograms_CMSDAS26.py -y 2024 -c mutau -t idsftes  --tauid-sf --apply-tes  # both
+
+# --- Tier B (Fit 1) : measure TES + TauID SF with Combine (POIs tes_DM*, tid_SF_*) ---
+#     NO Z->mumu CR: anchoring DY to mumu would bias the Z->tautau cross-section (Fit 2) and the
+#     sigma(Z->tt)/sigma(Z->mumu) universality test. Use the no-CR driver.
+cd $CMSSW_BASE/src/TauFW/Fitter
+python3 TauES/createinputsTES.py -y 2024 -c TauES_ID/config/config_coarse_TT.yml
+bash run_workflow_corrTES_noCR.sh         # YEAR="2024"; correlated TES + TauID SF, no Zmm CR
+
+
+# ==========================================================================
+# 7) DATACARDS for the CROSS-SECTION fit (Fit 2)  -- docs: datacards.md
+#    Signal = r on ZTT (mutau) / DY (mumu); TES/TauID applied, varied within unc.
+# ==========================================================================
+cd $CMSSW_BASE/src/TauFW/Plotter
+# inputs WITH the measured TauID SF + TES applied (this is the ZTT template used by the fit):
+./plots_and_histograms_CMSDAS26.py -y 2024 -c mutau --tauid-sf --apply-tes
+./plots_and_histograms_CMSDAS26.py -y 2024 -c mumu
+# build the datacards (reads hists/2024/<channel>.root, region 'signalRegion'):
+./make_xsec_fit.py -c mutau -y 2024               # inclusive m_vis, signal ZTT
+./make_xsec_fit.py -c mumu  -y 2024 --onebin      # single-bin counting, signal DY
+
+
+# ==========================================================================
+# 8) THE MEASUREMENT (Fit 2)  -- docs: measurement.md
+#    sigma(Z) = r * sigma_theory ;  universality:  sigma(Z->tt)/sigma(Z->mumu) = r(mt)/r(mumu)
+# ==========================================================================
+cd $CMSSW_BASE/src/TauFW/Plotter/xsec_fit
+# --- Z->tautau (mutau, inclusive m_vis) ---
+text2workspace.py datacard_mutau.txt
+combine -M MultiDimFit -P r --algo singles -n .xsec_mutau datacard_mutau.root
+combine -M FitDiagnostics --robustHesse 1  -n .xsec_mutau datacard_mutau.root
+combineTool.py -M Impacts -d datacard_mutau.root -m 90 --doInitialFit --robustFit 1
+combineTool.py -M Impacts -d datacard_mutau.root -m 90 --doFits       --robustFit 1
+combineTool.py -M Impacts -d datacard_mutau.root -m 90 -o impacts_mutau.json
+plotImpacts.py -i impacts_mutau.json -o impacts_mutau
+# --- Z->mumu (one-bin counting) ---
+text2workspace.py datacard_mumu.txt
+combine -M MultiDimFit -P r --algo singles -n .xsec_mumu datacard_mumu.root

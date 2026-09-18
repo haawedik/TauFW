@@ -6,9 +6,10 @@ plotter, which reads the pre-made 2024 n-tuples:
 cd $CMSSW_BASE/src/TauFW/Plotter
 ./plots_and_histograms_CMSDAS26.py -y 2024 -c mutau
 ```
-Outputs: control plots in `plots/2024/` (e.g. `m_vis_mutau-baseline-2024.pdf`) and histograms in
-`hists/2024/mutau.root`. Two regions are produced: the **opposite-sign** signal region (`baseline`) and
-the **same-sign** QCD control region (`baseline_cr_qcd`).
+Outputs: control plots in `plots/2024/` (e.g. `m_vis_mutau-signalRegion-2024.pdf`) and histograms in
+`hists/2024/mutau.root`. One region is produced: the **opposite-sign signal region** `signalRegion`
+(`q_1*q_2<0`, `mt_1<65`). QCD multijet is still estimated data-driven from the same-sign region
+internally by the OS/SS method (there is no separate same-sign plot).
 
 ## Normalization
 MC is scaled to **σ × L / N_eff**. Cross-sections, k-factors and effective event counts for 2024 are

@@ -16,7 +16,7 @@ First make the input histograms **with the measured SFs applied** (Fit-1 result,
 ```sh
 cd $CMSSW_BASE/src/TauFW/Plotter
 # mutau: inclusive m_vis with the measured TauID SF applied
-./plots_and_histograms_CMSDAS26.py -y 2024 -c mutau --addsf "getTauIDSF(dm_2,genmatch_2)"
+./plots_and_histograms_CMSDAS26.py -y 2024 -c mutau --tauid-sf
 # mumu: m_vis around the Z peak
 ./plots_and_histograms_CMSDAS26.py -y 2024 -c mumu
 ```

@@ -26,8 +26,10 @@ R.gROOT.SetBatch(True)
 
 # background normalization uncertainties (relative) -> "backgrounds floated within uncertainties".
 # Any background not listed falls back to DEFAULT_LNN.
-BKG_LNN = {'WJ':0.15,'QCD':0.20,'ZJ':0.15,'ZL':0.10,'TT':0.06,'ST':0.10,'VV':0.05}
+BKG_LNN = {'WJ':0.15,'QCD':0.20,'ZJ':0.15,'ZL':0.10,'TT':0.06,'ST':0.10,'VV':0.05,'Top':0.08}
 DEFAULT_LNN = 0.10
+# hist names the plotter uses for the observed data (data group name, e.g. 'Muon' in Run3)
+DATA_NAMES = ('data_obs','data','Muon','Muon0','Muon1','SingleMuon','EGamma','Observed')
 
 
 def collect_nominal(fin, region, var):
@@ -43,6 +45,8 @@ def collect_nominal(fin, region, var):
     proc = n[len(pre):]
     if proc.endswith('Up') or proc.endswith('Down'):
       continue  # systematic shape variation, not a nominal process
+    if proc.endswith('QCD'):
+      proc = 'QCD'  # plotter names the data-driven QCD '<region>_QCD'
     h = d.Get(n)
     h.SetDirectory(0)
     procs[proc] = h
@@ -60,7 +64,7 @@ def main():
   ap = argparse.ArgumentParser(description="CMSDAS26 dedicated Z cross-section datacard builder")
   ap.add_argument('-c', '--channel', default='mutau', help="mutau or mumu")
   ap.add_argument('-y', '--era', default='2024')
-  ap.add_argument('-r', '--region', default='baseline', help="TDirectory in the hist file")
+  ap.add_argument('-r', '--region', default='signalRegion', help="TDirectory in the hist file")
   ap.add_argument('--var', default='m_vis')
   ap.add_argument('--histfile', default=None, help="default hists/<era>/<channel>.root")
   ap.add_argument('--signal', default=None, help="signal process (default: ZTT for mutau, DY for mumu)")
@@ -78,7 +82,7 @@ def main():
     raise SystemExit("cannot open %s -- run plots_and_histograms_CMSDAS26.py first" % histfile)
 
   nominal = collect_nominal(fin, args.region, args.var)
-  dataname = 'data_obs' if 'data_obs' in nominal else ('data' if 'data' in nominal else None)
+  dataname = next((p for p in nominal if p in DATA_NAMES), None)
   if not dataname:
     raise SystemExit("no data histogram (data_obs/data) in %s:%s" % (histfile, args.region))
   data = nominal.pop(dataname)

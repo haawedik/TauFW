@@ -62,7 +62,7 @@ class ModuleMuTau(Module):
     self.eta_2       = np.zeros(1,dtype='f')
     self.q_2         = np.zeros(1,dtype='i')
     self.genmatch_2  = np.zeros(1,dtype='f')
-    self.decayMode_2 = np.zeros(1,dtype='i')
+    self.dm_2 = np.zeros(1,dtype='i')
     # --- DeepTau2018v2p5 (main tagger for the selection) ---
     self.idDeepTau2018v2p5VSjet_2  = np.zeros(1,dtype='i')
     self.idDeepTau2018v2p5VSe_2    = np.zeros(1,dtype='i')
@@ -86,7 +86,7 @@ class ModuleMuTau(Module):
     self.tree.Branch('eta_2',        self.eta_2, 'eta_2/F'            )
     self.tree.Branch('q_2',          self.q_2,   'q_2/I'              )
     self.tree.Branch('genmatch_2',   self.genmatch_2,  'genmatch_2/F' )
-    self.tree.Branch('decayMode_2',  self.decayMode_2, 'decayMode_2/I')
+    self.tree.Branch('dm_2',         self.dm_2,        'dm_2/I')
     self.tree.Branch('idDeepTau2018v2p5VSjet_2',  self.idDeepTau2018v2p5VSjet_2,  'idDeepTau2018v2p5VSjet_2/I' )
     self.tree.Branch('idDeepTau2018v2p5VSe_2',    self.idDeepTau2018v2p5VSe_2,    'idDeepTau2018v2p5VSe_2/I'   )
     self.tree.Branch('idDeepTau2018v2p5VSmu_2',   self.idDeepTau2018v2p5VSmu_2,   'idDeepTau2018v2p5VSmu_2/I'  )
@@ -178,7 +178,7 @@ class ModuleMuTau(Module):
     self.pt_2[0]        = tau.pt
     self.eta_2[0]       = tau.eta
     self.q_2[0]         = tau.charge
-    self.decayMode_2[0] = tau.decayMode
+    self.dm_2[0]        = tau.decayMode
     # --- DeepTau2018v2p5 ---
     self.idDeepTau2018v2p5VSjet_2[0]  = tau.idDeepTau2018v2p5VSjet
     self.idDeepTau2018v2p5VSe_2[0]    = tau.idDeepTau2018v2p5VSe
