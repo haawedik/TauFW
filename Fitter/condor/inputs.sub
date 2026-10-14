@@ -1,0 +1,43 @@
+# Full-PNet 2526 mutau inputs: one job per (decay mode, VSjet WP) = 5 DM x 5 WP = 25 jobs.
+# Submit from Fitter/condor/ after:
+#   source make_proxy.sh ; export RELEASE_SRC=$HOME/CMSSW_14_1_0_pre4/src ; export FITTER_DIR=$RELEASE_SRC/TauFW-pnet/Fitter
+#   condor_submit inputs.sub
+universe       = vanilla
+executable     = run_inputs.sh
+arguments      = $(DM) $(WP)
+environment    = RELEASE_SRC=$ENV(RELEASE_SRC);FITTER_DIR=$ENV(FITTER_DIR)
+request_cpus   = 4
+request_memory = 4 GB
++JobFlavour    = "longlunch"
+x509userproxy  = $ENV(X509_USER_PROXY)
+should_transfer_files = NO
+output         = logs/inputs_$(DM)_$(WP).$(ClusterId).out
+error          = logs/inputs_$(DM)_$(WP).$(ClusterId).err
+log            = logs/inputs.$(ClusterId).log
+queue DM, WP from (
+DM0, Loose
+DM0, Medium
+DM0, Tight
+DM0, VTight
+DM0, VVTight
+DM1, Loose
+DM1, Medium
+DM1, Tight
+DM1, VTight
+DM1, VVTight
+recovAllDMs, Loose
+recovAllDMs, Medium
+recovAllDMs, Tight
+recovAllDMs, VTight
+recovAllDMs, VVTight
+DM10, Loose
+DM10, Medium
+DM10, Tight
+DM10, VTight
+DM10, VVTight
+DM11, Loose
+DM11, Medium
+DM11, Tight
+DM11, VTight
+DM11, VVTight
+)

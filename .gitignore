@@ -26,3 +26,9 @@ Fitter/*.log
 Fitter/output*
 Fitter/*.out
 Fitter/Zpt/weights
+# full-PNet 2526 workflow outputs (big; generated at run time)
+Fitter/input_pt_less_region*
+Fitter/plots_pt_less_region*
+Fitter/postfit_pt_less_region*
+Fitter/condor/logs/*
+!Fitter/condor/logs/.gitkeep

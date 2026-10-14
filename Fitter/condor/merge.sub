@@ -1,0 +1,16 @@
+# Full-PNet 2526: final cross-WP merge (combined correction JSON + grids/NLL/tid). One job.
+# Submit AFTER all fit.sub jobs finish.
+# Submit from Fitter/condor/ (after RELEASE_SRC/FITTER_DIR exports): condor_submit merge.sub
+#   (or just run locally: bash run_merge.sh)
+universe       = vanilla
+executable     = run_merge.sh
+environment    = RELEASE_SRC=$ENV(RELEASE_SRC);FITTER_DIR=$ENV(FITTER_DIR)
+request_cpus   = 1
+request_memory = 4 GB
++JobFlavour    = "longlunch"
+x509userproxy  = $ENV(X509_USER_PROXY)
+should_transfer_files = NO
+output         = logs/merge.$(ClusterId).out
+error          = logs/merge.$(ClusterId).err
+log            = logs/merge.$(ClusterId).log
+queue 1

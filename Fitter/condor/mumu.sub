@@ -1,0 +1,21 @@
+# Full-PNet 2526 Z->mumu CR inputs: one job per VSjet WP (content is WP-independent, written per WP dir).
+# Submit from Fitter/condor/ (after make_proxy.sh + RELEASE_SRC/FITTER_DIR exports): condor_submit mumu.sub
+universe       = vanilla
+executable     = run_mumu.sh
+arguments      = $(WP)
+environment    = RELEASE_SRC=$ENV(RELEASE_SRC);FITTER_DIR=$ENV(FITTER_DIR)
+request_cpus   = 4
+request_memory = 4 GB
++JobFlavour    = "longlunch"
+x509userproxy  = $ENV(X509_USER_PROXY)
+should_transfer_files = NO
+output         = logs/mumu_$(WP).$(ClusterId).out
+error          = logs/mumu_$(WP).$(ClusterId).err
+log            = logs/mumu.$(ClusterId).log
+queue WP from (
+Loose
+Medium
+Tight
+VTight
+VVTight
+)
