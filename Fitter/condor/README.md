@@ -11,11 +11,11 @@ source make_proxy.sh                                   # long-lived X509 proxy o
 export RELEASE_SRC=$HOME/CMSSW_14_1_0_pre4/src
 export FITTER_DIR=$RELEASE_SRC/TauFW-pnet/Fitter
 
-# 1. build inputs: 25 mutau jobs (DM x VSjet WP, each builds both VSe=Tight,VVLoose)
+# 1. build inputs: 50 mutau jobs (DM x VSjet x VSe, 16 threads each)
 #    + 1 mumu CR job (built once, symlinked into every VSjet x VSe dir -- VSjet/VSe-independent).
 condor_submit inputs.sub
 condor_submit mumu.sub
-# ...wait for all 26 to finish...
+# ...wait for all 51 to finish...
 
 # 2. hadd the per-DM mutau files into one inputs file per WP (local, quick)
 bash merge_inputs.sh

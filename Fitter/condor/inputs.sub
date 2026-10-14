@@ -1,43 +1,69 @@
-# Full-PNet 2526 mutau inputs: one job per (decay mode, VSjet WP) = 5 DM x 5 WP = 25 jobs.
+# Full-PNet 2526 mutau inputs: one job per (DM, VSjet WP, VSe WP) = 5 DM x 5 VSjet x 2 VSe = 50 jobs.
+# 16 threads/job (ROOT implicit-MT) for the heavy 337M-event QCD/MultiDraw pass.
 # Submit from Fitter/condor/ after:
-#   source make_proxy.sh ; export RELEASE_SRC=$HOME/CMSSW_14_1_0_pre4/src ; export FITTER_DIR=$RELEASE_SRC/TauFW-pnet/Fitter
+#   source make_proxy.sh afs ; export RELEASE_SRC=$HOME/CMSSW_14_1_0_pre4/src ; export FITTER_DIR=$RELEASE_SRC/TauFW-pnet/Fitter
 #   condor_submit inputs.sub
 universe       = vanilla
 executable     = run_inputs.sh
-arguments      = $(DM) $(WP)
+arguments      = $(DM) $(WP) $(EWP)
 environment    = RELEASE_SRC=$ENV(RELEASE_SRC);FITTER_DIR=$ENV(FITTER_DIR)
-request_cpus   = 4
-request_memory = 4 GB
+request_cpus   = 16
+request_memory = 8 GB
 +JobFlavour    = "longlunch"
 x509userproxy  = $ENV(X509_USER_PROXY)
 should_transfer_files = NO
-output         = logs/inputs_$(DM)_$(WP).$(ClusterId).out
-error          = logs/inputs_$(DM)_$(WP).$(ClusterId).err
+output         = logs/inputs_$(DM)_$(WP)_$(EWP).$(ClusterId).out
+error          = logs/inputs_$(DM)_$(WP)_$(EWP).$(ClusterId).err
 log            = logs/inputs.$(ClusterId).log
-queue DM, WP from (
-DM0, Loose
-DM0, Medium
-DM0, Tight
-DM0, VTight
-DM0, VVTight
-DM1, Loose
-DM1, Medium
-DM1, Tight
-DM1, VTight
-DM1, VVTight
-recovAllDMs, Loose
-recovAllDMs, Medium
-recovAllDMs, Tight
-recovAllDMs, VTight
-recovAllDMs, VVTight
-DM10, Loose
-DM10, Medium
-DM10, Tight
-DM10, VTight
-DM10, VVTight
-DM11, Loose
-DM11, Medium
-DM11, Tight
-DM11, VTight
-DM11, VVTight
+queue DM, WP, EWP from (
+DM0, Loose, Tight
+DM0, Loose, VVLoose
+DM0, Medium, Tight
+DM0, Medium, VVLoose
+DM0, Tight, Tight
+DM0, Tight, VVLoose
+DM0, VTight, Tight
+DM0, VTight, VVLoose
+DM0, VVTight, Tight
+DM0, VVTight, VVLoose
+DM1, Loose, Tight
+DM1, Loose, VVLoose
+DM1, Medium, Tight
+DM1, Medium, VVLoose
+DM1, Tight, Tight
+DM1, Tight, VVLoose
+DM1, VTight, Tight
+DM1, VTight, VVLoose
+DM1, VVTight, Tight
+DM1, VVTight, VVLoose
+recovAllDMs, Loose, Tight
+recovAllDMs, Loose, VVLoose
+recovAllDMs, Medium, Tight
+recovAllDMs, Medium, VVLoose
+recovAllDMs, Tight, Tight
+recovAllDMs, Tight, VVLoose
+recovAllDMs, VTight, Tight
+recovAllDMs, VTight, VVLoose
+recovAllDMs, VVTight, Tight
+recovAllDMs, VVTight, VVLoose
+DM10, Loose, Tight
+DM10, Loose, VVLoose
+DM10, Medium, Tight
+DM10, Medium, VVLoose
+DM10, Tight, Tight
+DM10, Tight, VVLoose
+DM10, VTight, Tight
+DM10, VTight, VVLoose
+DM10, VVTight, Tight
+DM10, VVTight, VVLoose
+DM11, Loose, Tight
+DM11, Loose, VVLoose
+DM11, Medium, Tight
+DM11, Medium, VVLoose
+DM11, Tight, Tight
+DM11, Tight, VVLoose
+DM11, VTight, Tight
+DM11, VTight, VVLoose
+DM11, VVTight, Tight
+DM11, VVTight, VVLoose
 )
