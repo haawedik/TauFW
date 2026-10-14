@@ -14,6 +14,10 @@ E_VALUES="${E_VALUES:-Tight VVLoose}"
 REF_J="${REF_J:-Medium}"; REF_E="${REF_E:-VVLoose}"   # dir that gets the single real build
 FNAME="ztt_mm_tes_m_vis.inputs-${YEAR}-13TeV_mumu.root"
 
+# short, unique TMPDIR (see run_inputs.sh): avoids the multiprocessing.Manager AF_UNIX socket overflow.
+export TMPDIR="$(mktemp -d /tmp/pnet.XXXXXX)"
+trap 'rm -rf "$TMPDIR"' EXIT
+
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 cd "$RELEASE_SRC" && eval $(scramv1 runtime -sh)
 cd "$FITTER_DIR"

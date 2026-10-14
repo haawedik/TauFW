@@ -12,6 +12,11 @@ YEAR="${YEAR:-2526}"
 CONFIG="${CONFIG:-TauES_ID/config/config_coarse_TT_pnet.yml}"
 OUTBASE="${OUTBASE:-input_pt_less_region_pnet}"
 
+# short, unique TMPDIR: TauFW's MultiThread.py creates a multiprocessing.Manager at import, whose AF_UNIX
+# socket path overflows the 108-char limit under condor's long scratch TMPDIR -> "Address already in use".
+export TMPDIR="$(mktemp -d /tmp/pnet.XXXXXX)"
+trap 'rm -rf "$TMPDIR"' EXIT
+
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 cd "$RELEASE_SRC" && eval $(scramv1 runtime -sh)      # cmsenv (shared TauFW modules via $CMSSW_BASE/python)
 cd "$FITTER_DIR"
