@@ -7,7 +7,7 @@ set -e
 JET_WP=$1
 : "${RELEASE_SRC:?set RELEASE_SRC in the environment (the CMSSW .../src dir)}"
 FITTER_DIR="${FITTER_DIR:-$RELEASE_SRC/TauFW-pnet/Fitter}"
-ELE_WP="${ELE_WP:-VVLoose}"
+ELE_WPS="${ELE_WPS:-Tight VVLoose}"   # one mumu CR copy per VSe WP dir (content is VSe-independent)
 YEAR="${YEAR:-2526}"
 CONFIG_MM="${CONFIG_MM:-TauES/config/FitSetup_mumu.yml}"
 OUTBASE="${OUTBASE:-input_pt_less_region_pnet}"
@@ -16,4 +16,7 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 cd "$RELEASE_SRC" && eval $(scramv1 runtime -sh)
 cd "$FITTER_DIR"
 mkdir -p "${OUTBASE}/rebinning"
-python3 TauES/createinputsTES_pnet.py -y "$YEAR" -c "$CONFIG_MM" -j "$JET_WP" -e "$ELE_WP" -O "$OUTBASE"
+for ELE_WP in $ELE_WPS; do
+  echo ">>> mumu CR inputs: VSjet=$JET_WP VSe=$ELE_WP"
+  python3 TauES/createinputsTES_pnet.py -y "$YEAR" -c "$CONFIG_MM" -j "$JET_WP" -e "$ELE_WP" -O "$OUTBASE"
+done

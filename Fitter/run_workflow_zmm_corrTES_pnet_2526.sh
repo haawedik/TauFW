@@ -22,7 +22,7 @@ CONFIG_MM="TauES/config/FitSetup_mumu.yml"              # Z->mumu CR (tagger-ind
 
 # VSjet WP sweep: condor fans out one WP per job via J_WP; default = full sweep.
 if [ -n "$J_WP" ]; then J_VALUES=($J_WP); else J_VALUES=("Loose" "Medium" "Tight" "VTight" "VVTight"); fi
-E_VALUES=("VVLoose")                                    # PNet VSe WP (fixed)
+if [ -n "$E_WP" ]; then E_VALUES=($E_WP); else E_VALUES=("Tight" "VVLoose"); fi   # PNet VSe WPs to sweep
 YEARS=("2526")
 DMS=("DM0" "DM1" "recovAllDMs" "DM10" "DM11")           # 5 PNet DM bins (DM1 = PNet DM 1||2; recov = HPS-invalid)
 DMS_CSV=$(IFS=,; echo "${DMS[*]}")                      # for plotters that take --dms

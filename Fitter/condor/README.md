@@ -11,7 +11,8 @@ source make_proxy.sh                                   # long-lived X509 proxy o
 export RELEASE_SRC=$HOME/CMSSW_14_1_0_pre4/src
 export FITTER_DIR=$RELEASE_SRC/TauFW-pnet/Fitter
 
-# 1. build inputs: 25 mutau jobs (DM x VSjet WP) + 5 mumu CR jobs (per WP)
+# 1. build inputs: 25 mutau jobs (DM x VSjet WP, each builds both VSe=Tight,VVLoose)
+#    + 5 mumu CR jobs (per VSjet WP, both VSe). Override VSe set with ELE_WPS="...".
 condor_submit inputs.sub
 condor_submit mumu.sub
 # ...wait for all 30 to finish...

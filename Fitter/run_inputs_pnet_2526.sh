@@ -13,7 +13,7 @@ CONFIG_MM="TauES/config/FitSetup_mumu.yml"           # Z->mumu CR (tagger-indepe
 OUTBASE="input_pt_less_region_pnet"
 
 J_VALUES=("Loose" "Medium" "Tight" "VTight" "VVTight")   # PNet VSjet WPs (raw-score) to sweep
-E_VALUES=("VVLoose")                                     # PNet VSe WP (fixed; mutau convention)
+E_VALUES=("Tight" "VVLoose")                             # PNet VSe WPs to sweep
 YEARS=("2526")
 
 TIMESTAMP=$(date +"%Y%m%d_%H%M")

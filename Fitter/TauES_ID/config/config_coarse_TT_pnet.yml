@@ -21,22 +21,37 @@ tag: "_mutau"
 # the official PNet VSe-VVLoose / VSmu-Tight working points for 2526 before the production run.
 tagger:
     id_label: "PNet"
+    # Official PNet raw-score working points (2526). NOTE: VSe 0.1266 = VVVLoose (NOT VVLoose);
+    # VSe VVLoose = 0.3547. The FranGCH DM12 config cut at 0.1266 (= VVVLoose).
     vsjet:
         discriminant: "rawPNetVSjet_2"
         wps:
-            Loose:   0.6857
-            Medium:  0.8347
-            Tight:   0.9059
-            VTight:  0.9494
-            VVTight: 0.9737
+            VVVLoose: 0.0565
+            VVLoose:  0.1774
+            VLoose:   0.3810
+            Loose:    0.6857
+            Medium:   0.8347
+            Tight:    0.9059
+            VTight:   0.9494
+            VVTight:  0.9737
     vse:
         discriminant: "rawPNetVSe_2"
         wps:
-            VVLoose: 0.1266
+            VVVLoose: 0.1266
+            VVLoose:  0.3547
+            VLoose:   0.6997
+            Loose:    0.9354
+            Medium:   0.9791
+            Tight:    0.9897
+            VTight:   0.9946
+            VVTight:  0.9971
     vsmu:
         discriminant: "rawPNetVSmu_2"
         wps:
-            Tight: 0.9451
+            VLoose: 0.2399
+            Loose:  0.6037
+            Medium: 0.8697
+            Tight:  0.9451
 
 # default WPs if the CLI -j/-e/-m are not given (the driver/condor DO pass -j for the sweep)
 workingPoints:
