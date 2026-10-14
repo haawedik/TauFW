@@ -12,10 +12,10 @@ export RELEASE_SRC=$HOME/CMSSW_14_1_0_pre4/src
 export FITTER_DIR=$RELEASE_SRC/TauFW-pnet/Fitter
 
 # 1. build inputs: 25 mutau jobs (DM x VSjet WP, each builds both VSe=Tight,VVLoose)
-#    + 5 mumu CR jobs (per VSjet WP, both VSe). Override VSe set with ELE_WPS="...".
+#    + 1 mumu CR job (built once, symlinked into every VSjet x VSe dir -- VSjet/VSe-independent).
 condor_submit inputs.sub
 condor_submit mumu.sub
-# ...wait for all 30 to finish...
+# ...wait for all 26 to finish...
 
 # 2. hadd the per-DM mutau files into one inputs file per WP (local, quick)
 bash merge_inputs.sh
