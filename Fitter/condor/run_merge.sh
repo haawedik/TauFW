@@ -5,6 +5,8 @@
 set -e
 : "${RELEASE_SRC:?set RELEASE_SRC in the environment (the CMSSW .../src dir)}"
 FITTER_DIR="${FITTER_DIR:-$RELEASE_SRC/TauFW-pnet/Fitter}"
+# short unique TMPDIR (see run_inputs.sh): the fit/merge scripts import the same MultiThread.py Manager.
+export TMPDIR="$(mktemp -d /tmp/pnet.XXXXXX)"; trap 'rm -rf "$TMPDIR"' EXIT
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 cd "$RELEASE_SRC" && eval $(scramv1 runtime -sh)
