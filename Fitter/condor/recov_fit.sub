@@ -1,0 +1,27 @@
+# Targeted recovAllDMs re-fit (coarse 11-bin): one job per (VSjet WP, VSe WP) = 10 jobs.
+# Fits ONLY recovAllDMs via the recov-only config; DM0/1/10/11 are untouched.
+# Submit from Fitter/condor/ (after make_proxy + RELEASE_SRC/FITTER_DIR exports): condor_submit recov_fit.sub
+universe       = vanilla
+executable     = run_recovfit.sh
+arguments      = $(WP) $(EWP)
+environment    = RELEASE_SRC=$ENV(RELEASE_SRC);FITTER_DIR=$ENV(FITTER_DIR)
+request_cpus   = 1
+request_memory = 4 GB
++JobFlavour    = "longlunch"
+x509userproxy  = $ENV(X509_USER_PROXY)
+should_transfer_files = NO
+output         = logs/recovfit_$(WP)_$(EWP).$(ClusterId).out
+error          = logs/recovfit_$(WP)_$(EWP).$(ClusterId).err
+log            = logs/recovfit.$(ClusterId).log
+queue WP, EWP from (
+Loose, Tight
+Loose, VVLoose
+Medium, Tight
+Medium, VVLoose
+Tight, Tight
+Tight, VVLoose
+VTight, Tight
+VTight, VVLoose
+VVTight, Tight
+VVTight, VVLoose
+)
