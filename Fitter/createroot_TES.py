@@ -524,7 +524,7 @@ def plot_dm_graph(setup, form, ele_wp, jet_wp, **kwargs):
                     dm_systematic_categories = []
                     
                     for dm in dm_order:
-                        dm_num = -1 if dm == 'DMrest' else int(dm.replace('DM', ''))  # DM0->0, DM11->11, DMrest->-1
+                        dm_num = -1 if dm in ('DMrest', 'recovAllDMs') else int(dm.replace('DM', ''))  # DM0->0, DM11->11, DMrest/recovAllDMs->-1
                         key = f'{dm}_{current_jet_wp}'
                         
                         if key in sf_dict[sf][args.year] and len(sf_dict[sf][args.year][key]["content"]) > 0:

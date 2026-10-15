@@ -153,7 +153,7 @@ def main():
         _d = _r.split('_')[0]
         if _d not in _dms:
           _dms.append(_d)
-      DMS = [(-1 if _d == 'DMrest' else int(_d.replace('DM', ''))) for _d in _dms]
+      DMS = [(-1 if _d in ('DMrest', 'recovAllDMs') else int(_d.replace('DM', ''))) for _d in _dms]
     except Exception:
       pass
     print(f">>> Tagger from config: id={TID_LABEL}, label={LABEL}, VSjet WPs={VSJET_WPS}, DMs={DMS}")
