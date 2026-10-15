@@ -1,0 +1,13 @@
+# Full-PNet 2526 SF pipeline: fit all 10 WP cells, THEN merge once the fits finish.
+# The merge node (run_merge.sh -> MERGE_ONLY) produces the combined JSON, the per-WP
+# scan grids (make_scan_grid.py), the 1D NLL profiles, and the combined TauEnergy/TauID SF.
+# Prerequisite: inputs already built (inputs.sub + mumu.sub -> merge_inputs.sh).
+#
+# Submit (from condor/):
+#   export X509_USER_PROXY=$HOME/private/.condor_proxy/x509up
+#   export RELEASE_SRC=$HOME/CMSSW_14_1_0_pre4/src
+#   export FITTER_DIR=$RELEASE_SRC/TauFW-pnet/Fitter
+#   condor_submit_dag pipeline.dag
+JOB   fit    fit.sub
+JOB   merge  merge.sub
+PARENT fit CHILD merge

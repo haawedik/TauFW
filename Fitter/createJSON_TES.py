@@ -21,7 +21,7 @@ def load_pt_values(setup,**kwargs):
     for region in setup['regions']:
         # print("region = %s" %(ptregion))
         title = setup['regions'][region]["title"]
-        if 'pt' not in title: continue
+        if 'pt:' not in title: continue
         str_pt_lo = title.split("pt:")[-1].split('-')[0].strip()
         str_pt_hi = title.split("pt:")[-1].split('-')[1].strip()
         pt_hi = float(str_pt_hi)
@@ -41,7 +41,7 @@ def load_edges(setup,**kwargs):
     for region in setup['regions']:
         # print("region = %s" %(ptregion))
         title = setup["regions"][region]["title"]
-        if 'pt' not in title: continue
+        if 'pt:' not in title: continue
         str_pt_lo = title.split("pt:")[-1].split('-')[0].strip()
         str_pt_hi = title.split("pt:")[-1].split('-')[1].strip()
         #print("ibin")

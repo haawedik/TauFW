@@ -102,24 +102,16 @@ regions:
     DM11_pt3:
         definition: "decayModePNet_2==11 && idDecayModeNewDMs_2 && (pt_2*ptCorrPNet_2)>=60 && (pt_2*ptCorrPNet_2)<200"
         title: "h^{#pm}h^{#mp}h^{#pm}#pi^{0}, pt: 60-200"
-    recovAllDMs_pt1:
-        definition: "!idDecayModeNewDMs_2 && (pt_2*ptCorrPNet_2)>20 && (pt_2*ptCorrPNet_2)<40"
-        title: "recov #tau, pt: 20-40"
-        binning: [11, 40, 150]   # coarser (10 GeV/bin): recovery taus are stats-starved
-    recovAllDMs_pt2:
-        definition: "!idDecayModeNewDMs_2 && (pt_2*ptCorrPNet_2)>=40 && (pt_2*ptCorrPNet_2)<60"
-        title: "recov #tau, pt: 40-60"
-        binning: [11, 40, 150]
-    recovAllDMs_pt3:
-        definition: "!idDecayModeNewDMs_2 && (pt_2*ptCorrPNet_2)>=60 && (pt_2*ptCorrPNet_2)<200"
-        title: "recov #tau, pt: 60-200"
-        binning: [11, 40, 150]
+    recovAllDMs:
+        definition: "!idDecayModeNewDMs_2 && (pt_2*ptCorrPNet_2)>20 && (pt_2*ptCorrPNet_2)<200"
+        title: "recov #tau (incl pt)"
+        binning: [11, 40, 150]   # single inclusive region: pool ALL recovery taus, no pT split
 
 plottingOrder: &region_list
           [
             "DM0_pt1", "DM0_pt2", "DM0_pt3",
             "DM1_pt1", "DM1_pt2", "DM1_pt3",
-            "recovAllDMs_pt1", "recovAllDMs_pt2", "recovAllDMs_pt3",
+            "recovAllDMs",
             "DM10_pt1", "DM10_pt2", "DM10_pt3",
             "DM11_pt1", "DM11_pt2", "DM11_pt3",
           ]
@@ -130,8 +122,8 @@ observables:
         title: "m_{vis}"
         extra:
             cut: "40<m_vis && m_vis<150"
-        fitRegions: ["recovAllDMs_pt1","recovAllDMs_pt2","recovAllDMs_pt3"]
-        scanRegions: ["recovAllDMs_pt1","recovAllDMs_pt2","recovAllDMs_pt3"]
+        fitRegions: ["recovAllDMs"]
+        scanRegions: ["recovAllDMs"]
 
 TESvariations:
     values : [0.950, 0.960 ,0.970, 0.980, 0.990, 1.010, 1.020, 1.030, 1.040, 1.050]
@@ -165,9 +157,6 @@ tesRegions:
     DM1_pt1:        {title: "DM1 20<p_{t_{#tau}}<40"}
     DM1_pt2:        {title: "DM1 40<=p_{t_{#tau}}<60"}
     DM1_pt3:        {title: "DM1 60<=p_{t_{#tau}}<200"}
-    recovAllDMs_pt1: {title: "recov 20<p_{t_{#tau}}<40"}
-    recovAllDMs_pt2: {title: "recov 40<=p_{t_{#tau}}<60"}
-    recovAllDMs_pt3: {title: "recov 60<=p_{t_{#tau}}<200"}
     DM10_pt1:       {title: "DM10 20<p_{t_{#tau}}<40"}
     DM10_pt2:       {title: "DM10 40<=p_{t_{#tau}}<60"}
     DM10_pt3:       {title: "DM10 60<=p_{t_{#tau}}<200"}
@@ -187,9 +176,6 @@ tid_SFRegions:
     DM1_pt1:        {title: "DM1 20<p_{t_{#tau}}<40"}
     DM1_pt2:        {title: "DM1 40<=p_{t_{#tau}}<60"}
     DM1_pt3:        {title: "DM1 60<=p_{t_{#tau}}<200"}
-    recovAllDMs_pt1: {title: "recov 20<p_{t_{#tau}}<40"}
-    recovAllDMs_pt2: {title: "recov 40<=p_{t_{#tau}}<60"}
-    recovAllDMs_pt3: {title: "recov 60<=p_{t_{#tau}}<200"}
     DM10_pt1:       {title: "DM10 20<p_{t_{#tau}}<40"}
     DM10_pt2:       {title: "DM10 40<=p_{t_{#tau}}<60"}
     DM10_pt3:       {title: "DM10 60<=p_{t_{#tau}}<200"}

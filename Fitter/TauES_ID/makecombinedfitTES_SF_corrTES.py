@@ -291,30 +291,72 @@ def run_combined_fit(setup, setup_mumu, option, **kwargs):
                         f"-m 90 {workspace_file} {algo} {POI_OPTS} -n .{BINLABELoutput} "
                         f"{fit_opts} {xrtd_opts} {cmin_opts} {save_opts}"
                     )
-                    print(f"[corrTES] 2D scan ({POI2}, {POI1}) BIN={BINLABELoutput}")
-                    print(f"  {MultiDimFit_opts}")
-                    os.system(f"combine -M MultiDimFit {MultiDimFit_opts}")
-
-                    # ---- Iterative boost: up to 5 retries (max 6 passes total).
-                    # After each pass, if the grid found a deeper basin than the
-                    # current free-POI fit, re-seed from that grid point and
-                    # re-scan. Each pass reuses -n .{BINLABELoutput} and so
-                    # overwrites the previous pass's ROOT file in place. ----
+                    # Scan (grid) + iterative boost. Reused if the scan ROOT already
+                    # exists (set REFIT_SCAN=1 to force a rescan); the cheap seeded
+                    # best-fit below then just re-seeds from the existing grid.
                     fres = f"higgsCombine.{BINLABELoutput}.MultiDimFit.mH90.root"
-                    MAX_PASSES = 6
-                    for pass_n in range(2, MAX_PASSES + 1):
-                        boost = find_boost_params(fres, POI2, POI1)
-                        if not boost:
-                            print(f"[BOOST] {dm}/{r} converged before pass-{pass_n} (no deeper basin)")
-                            break
-                        boosted_opts = MultiDimFit_opts.replace(
-                            "--setParameters r=1 ",
-                            f"--setParameters r=1,{boost} ",
-                            1,
-                        )
-                        print(f"[BOOST] {dm}/{r} pass-{pass_n} (seeded from pass-{pass_n-1} deepest grid point)")
-                        os.system(f"combine -M MultiDimFit {boosted_opts}")
-                        print(f"[BOOST] {dm}/{r} pass-{pass_n} complete — overwrote {fres}")
+                    if os.environ.get("REFIT_SCAN") or not os.path.exists(fres):
+                        print(f"[corrTES] 2D scan ({POI2}, {POI1}) BIN={BINLABELoutput}")
+                        print(f"  {MultiDimFit_opts}")
+                        os.system(f"combine -M MultiDimFit {MultiDimFit_opts}")
+                        # ---- Iterative boost: up to 5 retries (max 6 passes total).
+                        # After each pass, if the grid found a deeper basin than the
+                        # current free-POI fit, re-seed from that grid point and re-scan.
+                        # Each pass reuses -n .{BINLABELoutput}, overwriting in place. ----
+                        MAX_PASSES = 6
+                        for pass_n in range(2, MAX_PASSES + 1):
+                            boost = find_boost_params(fres, POI2, POI1)
+                            if not boost:
+                                print(f"[BOOST] {dm}/{r} converged before pass-{pass_n} (no deeper basin)")
+                                break
+                            boosted_opts = MultiDimFit_opts.replace(
+                                "--setParameters r=1 ",
+                                f"--setParameters r=1,{boost} ",
+                                1,
+                            )
+                            print(f"[BOOST] {dm}/{r} pass-{pass_n} (seeded from pass-{pass_n-1} deepest grid point)")
+                            os.system(f"combine -M MultiDimFit {boosted_opts}")
+                            print(f"[BOOST] {dm}/{r} pass-{pass_n} complete — overwrote {fres}")
+                    else:
+                        print(f"[corrTES] reuse existing scan {fres} (REFIT_SCAN=1 to rescan)")
+
+                    # ---- Seeded MIGRAD best-fit (default on; NO_BESTFIT=1 disables):
+                    # slide continuously into the DEEPEST basin for a stable central
+                    # value instead of a quantized / flip-flopping grid node. Seeded at
+                    # the deepest grid point; writes a separate *_bestfit ROOT read at
+                    # extraction (the grid is still used for the 1σ band + the 2D PNG). ----
+                    if not os.environ.get("NO_BESTFIT"):
+                        _bfseed = find_boost_params(fres, POI2, POI1, threshold=float("inf"))
+                        _bfopts = MultiDimFit_opts.replace(algo, "--algo none", 1)
+                        _bfopts = _bfopts.replace(f"-n .{BINLABELoutput} ", f"-n .{BINLABELoutput}_bestfit ", 1)
+                        if _bfseed:
+                            _bfopts = _bfopts.replace("--setParameters r=1 ", f"--setParameters r=1,{_bfseed} ", 1)
+                        print(f"[BESTFIT] {dm}/{r}: seeded MIGRAD (--algo none) seed=({_bfseed})")
+                        os.system(f"combine -M MultiDimFit {_bfopts}")
+
+                    # --- Adaptive zoom (opt-in ZOOM_SCAN): after the boost, re-scan a NARROW window
+                    # around the deepest (tes_{dm}, tid_SF_{r}) point (same #points) -> finer resolution,
+                    # far secondary basin excluded. Overwrites fres so extraction + the scan PNG use it. ---
+                    if os.environ.get("ZOOM_SCAN"):
+                        zseed = find_boost_params(fres, POI2, POI1, threshold=float("inf"))
+                        zkv = dict(x.split("=") for x in zseed.split(",")) if zseed else {}
+                        if POI2 in zkv and POI1 in zkv:
+                            _tv = float(zkv[POI2]); _iv = float(zkv[POI1])
+                            _tb = [float(x) for x in tes_range.split(",")]
+                            _ib = [float(x) for x in tid_range_dm.split(",")]
+                            _tlo, _thi = max(_tb[0], _tv - 0.02), min(_tb[1], _tv + 0.02)
+                            _ilo, _ihi = max(_ib[0], _iv - 0.10), min(_ib[1], _iv + 0.10)
+                            _zset = ":".join(
+                                (f"{_p}={_tlo:.4f},{_thi:.4f}" if _p == POI2
+                                 else f"{_p}={_ilo:.4f},{_ihi:.4f}" if _p == POI1
+                                 else f"{_p}={tes_range if _p.startswith('tes_') else tid_range_dm}")
+                                for _p in all_pois
+                            )
+                            _zopts = MultiDimFit_opts.replace(f"--setParameterRanges {set_ranges}", f"--setParameterRanges {_zset}", 1)
+                            _zopts = _zopts.replace("--setParameters r=1 ", f"--setParameters r=1,{zseed} ", 1)
+                            print(f"[ZOOM] {dm}/{r}: tes[{_tlo:.4f},{_thi:.4f}] tid_SF[{_ilo:.4f},{_ihi:.4f}] (centered on deepest point)")
+                            os.system(f"combine -M MultiDimFit {_zopts}")
+                            print(f"[ZOOM] {dm}/{r}: done, overwrote {fres}")
 
                 # ---- Extract best-fits + 1σ; write per-DM param file ----
                 # Each 2D scan tree has branches: tes_DM<X>, tid_SF_DM<X>_pt<N>, deltaNLL, ...
@@ -360,14 +402,48 @@ def run_combined_fit(setup, setup_mumu, option, **kwargs):
                         f_in.Close()
                         continue
                     t.GetEntry(best_idx)
-                    bestfits[tid_poi]    = float(getattr(t, tid_poi))
+                    grid_tid = float(getattr(t, tid_poi))
+                    grid_tes = float(getattr(t, tes_poi))
+                    # Seeded MIGRAD central (override the grid node); keep grid 1σ band.
+                    mig_tid, mig_tes = None, None
+                    bf_file = f"higgsCombine.{bn}_bestfit.MultiDimFit.mH90.root"
+                    if os.path.exists(bf_file):
+                        fb = ROOT.TFile.Open(bf_file)
+                        tbf = fb.Get("limit") if fb else None
+                        if tbf and tbf.GetEntries() > 0:
+                            tbf.GetEntry(0)
+                            try:
+                                mig_tid = float(getattr(tbf, tid_poi))
+                                mig_tes = float(getattr(tbf, tes_poi))
+                            except Exception:
+                                pass
+                        if fb: fb.Close()
+                    # Fall back to the grid node if MIGRAD rails to a scan-range edge
+                    # (unconstrained direction -> boundary; the interior grid min is saner).
+                    _ie = [float(x) for x in tid_range_dm.split(",")]
+                    _te = [float(x) for x in tes_range.split(",")]
+                    _rail = lambda v, e: v is not None and (abs(v - e[0]) < 1e-3 or abs(v - e[1]) < 1e-3)
+                    if mig_tid is not None and not _rail(mig_tid, _ie):
+                        bestfits[tid_poi] = mig_tid
+                        if abs(mig_tid - grid_tid) > 1e-4:
+                            print(f"[BESTFIT] {dm}/{r}: tid_SF grid={grid_tid:.4f} -> MIGRAD={mig_tid:.4f}")
+                    else:
+                        bestfits[tid_poi] = grid_tid
+                        if _rail(mig_tid, _ie):
+                            print(f"[BESTFIT] {dm}/{r}: tid_SF MIGRAD railed ({mig_tid:.4f}) -> grid {grid_tid:.4f}")
                     if tid_in_1s:
-                        sigma_lows[tid_poi]  = min(tid_in_1s)
-                        sigma_highs[tid_poi] = max(tid_in_1s)
+                        # clamp band to bracket the central (grid 1σ is around the grid node)
+                        sigma_lows[tid_poi]  = min(min(tid_in_1s), bestfits[tid_poi])
+                        sigma_highs[tid_poi] = max(max(tid_in_1s), bestfits[tid_poi])
                     if tes_in_1s:
+                        if mig_tes is not None and not _rail(mig_tes, _te):
+                            _ptes = mig_tes
+                        else:
+                            _ptes = grid_tes
+                            if _rail(mig_tes, _te):
+                                print(f"[BESTFIT] {dm}/{r}: tes MIGRAD railed ({mig_tes:.4f}) -> grid {grid_tes:.4f}")
                         tes_projections.append((
-                            min(tes_in_1s), max(tes_in_1s),
-                            float(getattr(t, tes_poi)),
+                            min(tes_in_1s), max(tes_in_1s), _ptes,
                             max(tes_in_1s) - min(tes_in_1s),
                         ))
                     # Nuisance seeds from the first pT bin's scan entry 0
@@ -389,8 +465,8 @@ def run_combined_fit(setup, setup_mumu, option, **kwargs):
                     tes_projections.sort(key=lambda x: x[3])
                     lo, hi, best, _ = tes_projections[0]
                     bestfits[tes_poi]    = best
-                    sigma_lows[tes_poi]  = lo
-                    sigma_highs[tes_poi] = hi
+                    sigma_lows[tes_poi]  = min(lo, best)
+                    sigma_highs[tes_poi] = max(hi, best)
                     print(f"[corrTES] {dm}: {len(tes_projections)} TES projections, "
                           f"using tightest: tes={best:.4f} [{lo:.4f}, {hi:.4f}]")
 

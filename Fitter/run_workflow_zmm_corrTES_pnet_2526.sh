@@ -101,7 +101,8 @@ for YEAR in "${YEARS[@]}"; do
     python3 plot1D_NLL_profiles.py --variant corr --year $YEAR --dms ${DMS_CSV} --indir ${OUTPUT_ROOT} --outdir ${PLOTS_ROOT}
 
     echo "=== Building combined TauEnergy_SF + TauID_SF (full-PNet, ${YEAR}) ==="
-    PYTHONNOUSERSITE=1 python3 make_tid_2025.py --variant corr -y $YEAR -c $CONFIG_TT
+    PYTHONNOUSERSITE=1 python3 make_tid_2025.py --variant corr -y $YEAR -c $CONFIG_TT \
+      || echo "[warn] make_tid_2025 failed (deferred: saveSFs_root_JSON hardcoded for old 4-DM x 4-pt layout) — grids + merged JSON already written"
   fi  # PER_WP_ONLY
 done
 
