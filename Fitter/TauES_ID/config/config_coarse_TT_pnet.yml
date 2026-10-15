@@ -105,12 +105,15 @@ regions:
     recovAllDMs_pt1:
         definition: "!idDecayModeNewDMs_2 && (pt_2*ptCorrPNet_2)>20 && (pt_2*ptCorrPNet_2)<40"
         title: "recov #tau, pt: 20-40"
+        binning: [11, 40, 150]   # coarser (10 GeV/bin): recovery taus are stats-starved
     recovAllDMs_pt2:
         definition: "!idDecayModeNewDMs_2 && (pt_2*ptCorrPNet_2)>=40 && (pt_2*ptCorrPNet_2)<60"
         title: "recov #tau, pt: 40-60"
+        binning: [11, 40, 150]
     recovAllDMs_pt3:
         definition: "!idDecayModeNewDMs_2 && (pt_2*ptCorrPNet_2)>=60 && (pt_2*ptCorrPNet_2)<200"
         title: "recov #tau, pt: 60-200"
+        binning: [11, 40, 150]
 
 plottingOrder: &region_list
           [
