@@ -3,20 +3,25 @@
 # Submit from Fitter/condor/ (after make_proxy.sh + RELEASE_SRC/FITTER_DIR exports): condor_submit fit.sub
 universe       = vanilla
 executable     = run_fit.sh
-arguments      = $(WP)
+arguments      = $(WP) $(EWP)
 environment    = RELEASE_SRC=$ENV(RELEASE_SRC);FITTER_DIR=$ENV(FITTER_DIR)
 request_cpus   = 1
 request_memory = 4 GB
 +JobFlavour    = "longlunch"
 x509userproxy  = $ENV(X509_USER_PROXY)
 should_transfer_files = NO
-output         = logs/fit_$(WP).$(ClusterId).out
-error          = logs/fit_$(WP).$(ClusterId).err
+output         = logs/fit_$(WP)_$(EWP).$(ClusterId).out
+error          = logs/fit_$(WP)_$(EWP).$(ClusterId).err
 log            = logs/fit.$(ClusterId).log
-queue WP from (
-Loose
-Medium
-Tight
-VTight
-VVTight
+queue WP, EWP from (
+Loose, Tight
+Loose, VVLoose
+Medium, Tight
+Medium, VVLoose
+Tight, Tight
+Tight, VVLoose
+VTight, Tight
+VTight, VVLoose
+VVTight, Tight
+VVTight, VVLoose
 )
